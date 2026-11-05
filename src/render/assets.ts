@@ -15,6 +15,7 @@ import type { Ctx } from './art/kit';
 import * as FX from './art/fx';
 import * as CH from './art/chars';
 import * as E1 from './art/enemies1';
+import * as IC from './art/icons';
 
 export interface AssetSpec {
   /** size in world units */
@@ -70,6 +71,34 @@ const A: Record<string, AssetSpec> = {
   w_pike: { w: 64, h: 12, ax: 0.25, draw: CH.drawPike },
   w_bow: { w: 22, h: 44, ax: 0.35, draw: CH.drawBow },
   w_halo: { w: 36, h: 36, draw: CH.drawHalo, sil: true },
+
+  // ─── icons (white, tinted at runtime) ───
+  ic_ember: { w: 36, h: 36, draw: IC.icFlame },
+  ic_rime: { w: 36, h: 36, draw: IC.icFlake },
+  ic_storm: { w: 36, h: 36, draw: IC.icBolt },
+  ic_tide: { w: 36, h: 36, draw: IC.icWave },
+  ic_dawn: { w: 36, h: 36, draw: IC.icSun },
+  ic_umbra: { w: 36, h: 36, draw: IC.icEye },
+  ic_gale: { w: 36, h: 36, draw: IC.icSwirl },
+  ic_thorn: { w: 36, h: 36, draw: IC.icThorn },
+  ic_forge: { w: 36, h: 36, draw: IC.icAnvil },
+  ic_kindle: { w: 36, h: 36, draw: IC.icKindle },
+  ic_heart: { w: 36, h: 36, draw: IC.icHeart },
+  ic_gold: { w: 36, h: 36, draw: IC.icCoin },
+  ic_bag: { w: 36, h: 36, draw: IC.icBag },
+  ic_drop: { w: 36, h: 36, draw: IC.icDrop },
+  ic_die: { w: 36, h: 36, draw: IC.icDie },
+  ic_skull: { w: 36, h: 36, draw: IC.icSkull },
+  ic_crown: { w: 36, h: 36, draw: IC.icCrown },
+  ic_horns: { w: 36, h: 36, draw: IC.icHorns },
+  ic_eye: { w: 36, h: 36, draw: IC.icEye },
+  ic_sword: { w: 36, h: 36, draw: IC.icSword },
+  // pickups / props
+  coin: { w: 16, h: 16, draw: IC.drawCoin },
+  heart: { w: 20, h: 20, draw: IC.drawHeartPick },
+  rewardOrb: { w: 44, h: 44, draw: IC.drawRewardOrb },
+  portalRing: { w: 96, h: 96, draw: IC.drawPortalRing },
+  pedestal: { w: 64, h: 40, draw: IC.drawPedestal },
 
   // ─── biome 1 enemies ───
   cinderling: { w: 38, h: 42, ay: 0.55, draw: E1.drawCinderling, sil: true },

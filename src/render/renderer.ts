@@ -169,6 +169,9 @@ export class Renderer {
   whiteFlash!: Sprite;
   streakEdge!: Sprite;
   lowHp!: Sprite;
+  fadeSprite!: Sprite;
+  /** 0..1 black fade for room transitions */
+  fade = 0;
   enemyViews!: ViewPool<EnemyView>;
   projViews!: ViewPool<ProjView>;
   hzViews!: ViewPool<HzView>;
@@ -246,7 +249,10 @@ export class Renderer {
     this.whiteFlash = new Sprite(A.get('px'));
     this.whiteFlash.alpha = 0;
     this.whiteFlash.blendMode = 'add';
-    this.overlay.addChild(this.vignette, this.lowHp, this.streakEdge, this.hurtFlash, this.whiteFlash);
+    this.fadeSprite = new Sprite(A.get('px'));
+    this.fadeSprite.tint = 0x000000;
+    this.fadeSprite.alpha = 0;
+    this.overlay.addChild(this.vignette, this.lowHp, this.streakEdge, this.hurtFlash, this.whiteFlash, this.fadeSprite);
     this.buildPlayerView();
     this.enemyViews = new ViewPool(() => this.makeEnemyView(), this.entityLayer);
     this.projViews = new ViewPool(() => this.makeProjView(), this.projLayer);
@@ -269,6 +275,8 @@ export class Renderer {
     }
     this.whiteFlash.width = this.screenW;
     this.whiteFlash.height = this.screenH;
+    this.fadeSprite.width = this.screenW;
+    this.fadeSprite.height = this.screenH;
   }
 
   /* ─────────────── room setup ─────────────── */
@@ -1104,6 +1112,7 @@ export class Renderer {
 
   private assignPickup(v: SimpleView, k: Pickup) {
     const A = this.atlas;
+    v.root.alpha = k.kind === PK.ShopItem ? 0 : 1;
     const key = k.kind === PK.Gold ? 'coin' : k.kind === PK.Heal ? 'heart' : k.kind === PK.Reward ? 'rewardOrb' : 'dot';
     v.a.texture = A.get(key);
     v.b.visible = false;
@@ -1117,6 +1126,19 @@ export class Renderer {
     v.root.zIndex = k.y;
     v.a.y = Math.sin(this.time * 6 + k.id) * 3 - 6;
     v.glow.y = v.a.y;
+    if (k.kind === PK.Reward) {
+      const s = 1 + Math.sin(this.time * 10) * 0.08;
+      v.a.scale.set(s);
+      v.glow.scale.set(1.6 * s + Math.min(1, k.t * 3) * 0.4);
+      v.a.rotation = this.time * 2;
+      if (vrand() < 0.6) {
+        const p = this.particles.spawn(this.atlas.get('dot'), k.x + vrange(-10, 10), k.y - 6 + vrange(-10, 10), true);
+        p.vx = vrange(-40, 40);
+        p.vy = vrange(-80, -20);
+        p.max = 0.5;
+        p.s.tint = 0xfff1a6;
+      }
+    }
   }
 
   /* ─────────────── camera & overlay ─────────────── */
@@ -1189,6 +1211,7 @@ export class Renderer {
     this.streakEdge.tint = this.streakColor;
     this.streakEdge.alpha = this.streakGlow * (0.75 + Math.sin(this.time * (4 + tier * 2)) * 0.25);
     this.vignette.alpha = 0.85;
+    this.fadeSprite.alpha = this.fade;
   }
 
   /* ════════════════════ EVENTS → VISUAL FEEDBACK ════════════════════ */
@@ -1387,9 +1410,10 @@ export class Renderer {
         }
         for (let k = 0; k < 3; k++) {
           const ring = this.particles.spawn(A.get('ring'), ev.x, ev.y, true);
-          ring.max = 0.45 + k * 0.15;
+          ring.max = 0.35 + k * 0.12;
           ring.s0 = 0.3;
-          ring.s1 = 4 + k * 2;
+          ring.s1 = 1.6 + k * 0.9;
+          ring.a0 = 0.8 - k * 0.2;
           ring.s.tint = k === 1 ? 0xffffff : 0xfff1a6;
         }
         break;

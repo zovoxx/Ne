@@ -80,7 +80,7 @@ const dashAttack: ActionSpec = {
   chainAt: 0.3,
   active_(g, p) {
     const D = W.dashAttack;
-    const h = meleeRect(g, p, 'attack', p.actAngle, D.len, D.width, D.dmg, D.power, D.knock, D.active, F_BACKSTAB, 9, false, 3);
+    const h = meleeRect(g, p, 'dash', p.actAngle, D.len, D.width, D.dmg, D.power, D.knock, D.active, F_BACKSTAB, 9, false, 3);
     h.critBonus = 0.25 + g.stats.val('fangsDashCrit');
     h.follow = true;
   },

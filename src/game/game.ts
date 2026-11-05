@@ -1,5 +1,5 @@
 import { TUNING } from '../config/tuning';
-import { Corpse, Enemy, Hazard, Hitbox, HZ, Pickup, Pool, Projectile, Telegraph, TEAM_PLAYER, type Slot } from './entities';
+import { Corpse, Enemy, Hazard, Hitbox, HZ, Pickup, PK, Pool, Projectile, Telegraph, TEAM_PLAYER, type Slot } from './entities';
 import { EV, EventQueue } from './events';
 import { clamp, lerp, RNG } from './math';
 import { InputFrame, Player, recordInput, updatePlayer } from './player';
@@ -708,10 +708,11 @@ export class Game {
     for (const k of this.pickups.live) {
       if (!k.active) continue;
       k.t += dt;
+      if (k.kind === PK.ShopItem) continue;
       const dx = p.x - k.x;
       const dy = p.y - k.y;
       const d = Math.hypot(dx, dy) || 1;
-      if (k.magnet || d < 90) {
+      if (k.magnet || (d < 90 && k.kind !== PK.Reward) || (k.kind === PK.Reward && d < 60)) {
         k.magnet = true;
         const sp = 700 + k.t * 900;
         k.vx = (dx / d) * sp;
@@ -733,6 +734,9 @@ export class Game {
     const ev = this.events.push(EV.Pickup, k.x, k.y);
     ev.n = k.kind;
     ev.amount = k.value;
+    if (k.kind === PK.Gold) this.gold += k.value;
+    if (k.kind === PK.Heal) this.healPlayer(k.value);
+    if (k.kind === PK.Reward) (k.ref as { collectReward?: (g: Game) => void } | null)?.collectReward?.(this);
     this.effects.onPickup(this, k);
   }
 

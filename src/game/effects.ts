@@ -48,12 +48,12 @@ export class Effects {
     const S = g.stats;
     switch (el) {
       case 'ember':
-        e.burn = Math.min(S.burnMax, e.burn + Math.max(1, Math.round(2 * pow)));
+        e.burn = Math.min(S.burnMax, e.burn + Math.max(1, Math.round(pow)));
         if (e.burnTick <= 0) e.burnTick = 0.5;
         break;
       case 'rime': {
         if (e.freeze > 0) break;
-        e.chill += Math.max(1, Math.round(2 * pow));
+        e.chill += Math.max(1, Math.round(pow));
         e.chillDecay = 0;
         const need = Math.max(3, S.chillMax - (this.ext.chillNeedMod?.(g, e) ?? 0));
         if (e.chill >= need) this.freeze(g, e);
