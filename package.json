@@ -1,0 +1,30 @@
+{
+  "name": "lanternfall",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Lanternfall - a fast top-down action roguelike for phones and tablets",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host --port 4173",
+    "check": "tsc --noEmit",
+    "bot": "tsx scripts/bot.ts",
+    "playtest": "node scripts/playtest.cjs",
+    "icons": "node scripts/gen-icons.cjs",
+    "deploy": "npm run build && npx wrangler deploy",
+    "deploy:pages": "npm run build && npx wrangler pages deploy dist --project-name lanternfall"
+  },
+  "engines": {
+    "node": ">=20.19"
+  },
+  "dependencies": {
+    "pixi.js": "8.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vite": "8.3.6"
+  }
+}
