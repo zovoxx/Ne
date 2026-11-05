@@ -105,8 +105,8 @@ export class App {
       this.sfx.unlock();
       this.music.start();
     };
-    window.addEventListener('pointerdown', unlock, { capture: true });
-    window.addEventListener('keydown', unlock, { capture: true });
+    // iOS Safari only unlocks audio on some gesture types, so listen to all of them
+    for (const ev of ['pointerdown', 'touchend', 'click', 'keydown']) window.addEventListener(ev, unlock, { capture: true });
     // Android / desktop: first tap goes fullscreen + landscape (iOS needs the home-screen app)
     window.addEventListener('pointerdown', () => void this.platform.enterFullscreen(), { capture: true, once: true });
     if (import.meta.env.DEV || new URLSearchParams(location.search).has('debug')) this.debug = new DebugMenu(this);
