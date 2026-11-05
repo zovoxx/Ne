@@ -112,7 +112,7 @@ export function damageEnemy(g: Game, e: Enemy, base: number, info: HitInfo): num
   if (e.freeze > 0) mul += S.freezeVuln;
   if (e.hex > 0) mul += S.hexDmgTaken;
   if (e.hp >= e.maxHp && S.firstHitDmg > 0) mul += S.firstHitDmg;
-  if (e.stun > 0 && e.data.vuln) mul += e.data.vuln;
+  if (e.data.vuln && (e.stun > 0 || (e.data.vulnT ?? 0) > g.time)) mul += e.data.vuln;
   mul = g.effects.modifyDamage(g, e, info, mul);
   let crit = info.forceCrit;
   if (!crit && !info.isDot) {
@@ -121,6 +121,7 @@ export function damageEnemy(g: Game, e: Enemy, base: number, info: HitInfo): num
     crit = g.rng.next() < chance;
   }
   let dmg = base * mul * (crit ? TUNING.crit.multiplier + S.critMul + (e.mark > 0 ? S.dawnCritDmg : 0) : 1);
+  if (e.data.dr) dmg *= 1 - e.data.dr;
   dmg = Math.max(1, Math.round(dmg));
   let shown = dmg;
   if (e.bubble > 0) {

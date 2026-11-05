@@ -33,6 +33,7 @@ class EnemyView {
   shield!: Sprite;
   bubble!: Sprite;
   crown!: Sprite;
+  ring!: Sprite;
   sq = 0;
   sqv = 0;
   sqAxisX = true;
@@ -395,13 +396,16 @@ export class Renderer {
     v.bubble.blendMode = 'add';
     v.crown = new Sprite(A.get('shard'));
     v.crown.visible = false;
+    v.ring = new Sprite(A.get('ring'));
+    v.ring.visible = false;
+    v.ring.blendMode = 'add';
     v.hpBg = new Sprite(A.get('px'));
     v.hpBg.tint = 0x000000;
     v.hpBg.alpha = 0.7;
     v.hpFill = new Sprite(A.get('px'));
     v.hpArmor = new Sprite(A.get('px'));
     v.hpArmor.tint = 0xc8d2e6;
-    v.root.addChild(v.aura, v.shadow, v.body, v.flash, v.shield, v.bubble, v.crown, v.hpBg, v.hpFill, v.hpArmor);
+    v.root.addChild(v.ring, v.aura, v.shadow, v.body, v.flash, v.shield, v.bubble, v.crown, v.hpBg, v.hpFill, v.hpArmor);
     return v;
   }
 
@@ -597,8 +601,9 @@ export class Renderer {
     v.body.texture = A.get(art);
     v.flash.texture = A.silhouette(art);
     const tex = A.get(art);
-    // normalise: sprites are authored so their footprint matches def radius
-    v.baseScale = 1;
+    // sprites are authored at the def radius; elites/splits scale with their actual radius
+    v.baseScale = e.r / e.def.radius;
+    v.ring.visible = (e.data.auraR ?? 0) > 0;
     v.shadow.scale.set(((e.r * 2.2) / 48) * (e.flying ? 0.7 : 1), ((e.r * 1.1) / 20) * (e.flying ? 0.7 : 1));
     v.shadow.y = e.flying ? e.r * 0.9 : e.r * 0.35;
     v.sq = 0;
@@ -649,6 +654,7 @@ export class Renderer {
       flip = Math.cos(e.facing) < 0 ? -1 : 1;
       rot = sp > 20 ? Math.sin(v.wob * 0.5) * 0.07 : 0;
     } else if (orient === 'rotate') rot = e.facing;
+    v.baseScale = e.r / e.def.radius;
     const bs = v.baseScale * pop;
     v.body.scale.set(sx * flip * bs, sy * bs);
     v.flash.scale.copyFrom(v.body.scale);
@@ -669,6 +675,12 @@ export class Renderer {
     } else if (e.freeze > 0) {
       fa = 0.55;
       ft = 0x9ff0ff;
+    } else if (e.parry) {
+      fa = 0.45 + Math.sin(this.time * 24) * 0.2;
+      ft = 0xd8f0ff;
+    } else if (e.invuln) {
+      fa = 0.25;
+      ft = 0xfff1a6;
     } else if ((e.tg && e.tg.active) || e.data.windup) {
       fa = 0.22 + Math.sin(this.time * 30) * 0.12;
       ft = 0xff6a3a;
@@ -687,6 +699,13 @@ export class Renderer {
     }
     v.flash.alpha = e.visual === 1 ? 0 : fa;
     v.flash.tint = ft;
+    if (v.ring.visible) {
+      const R = e.data.auraR;
+      v.ring.scale.set((R * 2) / 128);
+      v.ring.tint = e.data.auraC || 0xffd27a;
+      v.ring.alpha = 0.28 + Math.sin(this.time * 4) * 0.08;
+      v.ring.rotation = this.time * 0.4;
+    }
     // elite / boss aura
     if (v.aura.visible) {
       const ec = (e.data.eliteColor as number) || (e.isBoss ? 0xff3d6e : 0xffd166);
@@ -883,6 +902,14 @@ export class Renderer {
         v.c.tint = h.color;
         v.c.blendMode = 'add';
         break;
+      case HZ.Mine:
+        v.a.texture = A.get('mine');
+        v.b.texture = A.get('glow');
+        v.b.tint = h.color;
+        v.b.blendMode = 'add';
+        v.c.texture = A.get('tgEdge');
+        v.c.tint = 0xff3b4a;
+        break;
       case HZ.Ink:
         v.a.texture = A.get('splat1');
         v.a.tint = 0x050a18;
@@ -972,6 +999,18 @@ export class Renderer {
         v.c.y = h.y2;
         v.c.scale.set(armed ? 0.6 : 0.3);
         v.c.alpha = 0.6 * fadeOut;
+        break;
+      }
+      case HZ.Mine: {
+        const armed = h.armT <= 0;
+        const blink = h.st === 1 ? Math.sin(this.time * 40) > 0 : Math.sin(this.time * 6 + h.id) > 0.6;
+        v.a.scale.set(1);
+        v.a.alpha = armed ? 1 : 0.5;
+        v.b.scale.set(0.5);
+        v.b.alpha = blink && armed ? 0.9 : 0.15;
+        v.c.visible = h.st === 1;
+        v.c.scale.set((h.r * 2) / 128);
+        v.c.alpha = 0.8;
         break;
       }
       case HZ.Ink:

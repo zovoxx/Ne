@@ -349,7 +349,7 @@ body {
 .toast {
   position: fixed;
   left: 50%;
-  top: calc(var(--sat) + 64px);
+  top: calc(var(--sat) + 100px);
   transform: translateX(-50%);
   font-family: var(--display);
   font-weight: 900;

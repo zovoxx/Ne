@@ -420,6 +420,7 @@ export function updatePlayer(g: Game, p: Player, dt: number, input: InputFrame) 
   // ── movement ──
   const maxSpeed = T.player.maxSpeed * (1 + st.moveSpeed) * (1 - Math.min(0.6, p.latchSlow + p.zoneSlow));
   p.zoneSlow = 0;
+  p.latchSlow = 0;
   if (p.dashing) {
     p.dashT += dt;
     p.vx = p.dashDx * p.dashSpeed;

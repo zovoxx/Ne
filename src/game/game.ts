@@ -10,6 +10,7 @@ import { updateHitboxes, tickEnemyStatus, killEnemy, updateCorpses } from './com
 import { updateProjectiles } from './projectiles';
 import { updateHazards } from './hazards';
 import { Effects } from './effects';
+import { installElites, updateOrbiters } from './enemies/elites';
 
 export interface Pillar {
   x: number;
@@ -91,6 +92,7 @@ export class Game {
 
   constructor() {
     const g = this;
+    installElites(this.effects);
     this.castAction = {
       id: 'cast',
       kind: 'cast',
@@ -170,6 +172,7 @@ export class Game {
     updateHitboxes(this, dt);
     this.updateEnemies(dt);
     if (C) this.chk('enemies');
+    updateOrbiters(this, dt);
     updateProjectiles(this, dt);
     updateHazards(this, dt);
     updateCorpses(this, dt);
@@ -317,9 +320,11 @@ export class Game {
       if (disabled) {
         e.vx *= 0.8;
         e.vy *= 0.8;
+        e.data.spd = 0;
       } else {
         const slow = Math.min(0.75, e.chill * this.stats.chillPerStack + (e.slowT > 0 ? e.slow : 0));
         const speed = (1 - slow) * (e.haste > 0 ? 1.4 : 1) * e.speedMul;
+        e.data.spd = speed;
         e.t += dt * speed;
         e.def.update(e, this, dt * speed);
         if (!e.active) continue;
@@ -508,7 +513,7 @@ export class Game {
   private updateTelegraphs(dt: number) {
     for (const t of this.telegraphs.live) {
       if (!t.active) continue;
-      t.t += dt;
+      t.t += dt * (t.owner ? (t.owner.data.spd ?? 1) : 1);
       if (t.owner && !t.owner.active) t.active = false;
       if (t.linger > 0 && t.t > t.dur + t.linger) t.active = false;
     }
@@ -532,6 +537,12 @@ export class Game {
     if (final <= 0) return false;
     p.hp -= final;
     p.damageTaken += final;
+    if (src && src.active && src.elite & 16) {
+      src.hp = Math.min(src.maxHp, src.hp + final * 3);
+      const hv = this.events.push(EV.Heal, src.x, src.y);
+      hv.amount = final * 3;
+      hv.flag = 1;
+    }
     p.hurtT = TUNING.player.hurtIframes;
     p.hurtLock = TUNING.player.hurtLock;
     p.lastHurtT = this.time;

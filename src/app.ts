@@ -20,6 +20,7 @@ import { BOON_BY_ID, PATRONS } from './game/boons/patrons';
 import type { PatronId } from './game/boons/types';
 import type { WeaponId } from './game/weapons/types';
 import { BotBrain } from './game/bot';
+import { ENCOUNTER_CTX } from './game/encounters';
 
 export class App {
   renderer = new Renderer();
@@ -93,6 +94,11 @@ export class App {
       if (ev.type === EV.DeathDefy) this.hud.toast('DEATH DEFIED', '#ffd27a', 1.4);
     });
     g.hooks.onPlayerDeath = () => this.onDeath();
+    // novelty memory: encounters favour enemy pairings you haven't fought together yet
+    ENCOUNTER_CTX.seenPairs = new Set(this.meta.seenPairs);
+    ENCOUNTER_CTX.onPairs = (pairs) => {
+      for (const p of pairs) if (!this.meta.seenPairs.includes(p)) this.meta.seenPairs.push(p);
+    };
 
     window.addEventListener('resize', () => {
       this.renderer.resize();
@@ -243,7 +249,14 @@ export class App {
     g.weapon.equip?.(g, g.player);
     this.rc = new RoomController(run, this.roomHooks());
     g.room = this.rc;
-    const plan = resume && run.current ? run.current : firstRoom(g.rng);
+    let plan = resume && run.current ? run.current : firstRoom(g.rng);
+    const qp = new URLSearchParams(location.search);
+    if (!resume && qp.has('biome')) {
+      // debug / test entry: start in a later biome
+      const b = Math.max(0, Math.min(3, Number(qp.get('biome')) || 0));
+      plan = { ...plan, biome: b, step: Number(qp.get('step') ?? 0) || 0 };
+      run.biome = b;
+    }
     if (resume && run.current) {
       run.rooms--;
       run.history.pop();

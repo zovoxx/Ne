@@ -131,6 +131,7 @@ export function updateProjectiles(g: Game, dt: number) {
     p.px = p.x;
     p.py = p.y;
     if (p.kind === PJ.Halo) continue; // the halo weapon drives its own projectile
+    const orbiter = p.st === 7;
     p.life -= dt;
     if (p.lob) {
       p.lt += dt;
@@ -196,6 +197,11 @@ export function updateProjectiles(g: Game, dt: number) {
     else if (p.homing <= 0) p.rot = Math.atan2(p.vy, p.vx);
     // walls
     let out = false;
+    if (orbiter) {
+      // orbiting elite blades ignore walls; only test the player
+      if (!pl.dead && !pl.invulnerable && (pl.x - p.x) ** 2 + (pl.y - p.y) ** 2 < (p.r + pl.r * 0.7) ** 2) g.hurtPlayer(p.dmg, p.x, p.y, p.ref as Enemy);
+      continue;
+    }
     if (p.x < A.x0 || p.x > A.x1) {
       if (p.bounces > 0) {
         p.vx = -p.vx;

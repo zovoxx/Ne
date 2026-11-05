@@ -19,6 +19,7 @@ export class BotBrain {
   private stuckT = 0;
   private lastX = 0;
   private lastY = 0;
+  private blockedT = 0;
   skill = 1;
 
   think(g: Game, rc: RoomController | null, f: InputFrame, dt: number) {
@@ -179,16 +180,36 @@ export class BotBrain {
         mx = (-dy / d) * this.strafe * 0.6;
         my = (dx / d) * this.strafe * 0.6;
       }
-      // shielded enemies: circle behind
-      if (target.frontShield > 0 && d < 200) {
-        const behindA = target.facing + Math.PI;
-        const bx = target.x + Math.cos(behindA) * 60;
-        const by = target.y + Math.sin(behindA) * 60;
-        const bl = Math.hypot(bx - p.x, by - p.y) || 1;
-        mx = (bx - p.x) / bl;
-        my = (by - p.y) / bl;
+      // shielded enemies: orbit to its back, dash through it when close
+      if (target.frontShield > 0 && d < 240) {
+        const fromE = Math.atan2(p.y - target.y, p.x - target.x);
+        const off = angleDiff(target.facing, fromE);
+        if (Math.abs(off) < target.frontShield / 2 + 0.3) {
+          this.blockedT += dt;
+          if (this.blockedT > 2 && p.castCharges > 0 && this.castCd <= 0) {
+            f.pressed.cast = true;
+            this.castCd = 1;
+          }
+          const side = off >= 0 ? 1 : -1;
+          const ta = fromE + side * 0.9;
+          const tx = target.x + Math.cos(ta) * 85;
+          const ty = target.y + Math.sin(ta) * 85;
+          const bl = Math.hypot(tx - p.x, ty - p.y) || 1;
+          mx = (tx - p.x) / bl;
+          my = (ty - p.y) / bl;
+          if ((d < 110 || this.blockedT > 2.5) && this.dashCd <= 0) {
+            this.blockedT = 0;
+            // dash straight through to the far side
+            mx = dx / d;
+            my = dy / d;
+            f.pressed.dash = true;
+            this.dashCd = 0.8;
+          }
+          f.held.attack = false;
+        } else this.blockedT = 0;
       }
-      if (d < want + 70 || ranged) {
+      const blocked = target.frontShield > 0 && Math.abs(angleDiff(target.facing, Math.atan2(p.y - target.y, p.x - target.x))) < target.frontShield / 2;
+      if ((d < want + 70 || ranged) && !blocked) {
         f.held.attack = true;
         if (Math.random() < 0.3) f.pressed.attack = true;
       }
