@@ -39,7 +39,7 @@ function fan(g: Game, p: Player, n: number, spreadDeg: number, dmgMul: number) {
   const pierce = S.pierce + g.stats.val('fangsPierce');
   for (let k = 0; k < n; k++) {
     const a = base + (k - (n - 1) / 2) * spreadDeg * DEG;
-    const pr = firePlayer(g, PJ.Knife, p.x + Math.cos(a) * 14, p.y + Math.sin(a) * 14, a, S.speed, S.dmg * dmgMul * (1 + g.stats.val('forgeSpecial')), 'special', S.power, 9, 'knife');
+    const pr = firePlayer(g, PJ.Knife, p.x + Math.cos(a) * 14, p.y + Math.sin(a) * 14, a, S.speed, S.dmg * dmgMul * (1 + g.stats.val('forgeSpecial') * 0.3), 'special', S.power, 9, 'knife');
     pr.pierce = pierce;
     pr.life = pr.maxLife = S.range / S.speed;
     pr.knock = 0.35;

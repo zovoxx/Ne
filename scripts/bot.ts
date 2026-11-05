@@ -151,7 +151,7 @@ function playRun(seed: number, weapon: WeaponId): RunResult {
         lastRooms = run.rooms;
         stuck = 0;
       } else if (++stuck > 60 * 180) {
-        crashed = `SOFTLOCK in b${run.biome} s${run.step} ${curPlan?.type} state=${rc.state} mode=${g.mode} enemies=${g.aliveEnemies()} pending=${rc.pending.length} wave=${rc.waveIdx}/${rc.waves.length} :: ` + g.enemies.live.filter((e) => e.active).map((e) => `${e.def.id}[st${e.st} t${e.t.toFixed(1)} (${e.x.toFixed(0)},${e.y.toFixed(0)}) hp${e.hp.toFixed(0)} ${e.untargetable ? 'UNTARG ' : ''}${e.invuln ? 'INV ' : ''}${e.spawnT > 0 ? 'SPAWN ' : ''}${e.latched ? 'LATCH' : ''}]`).join(' ') + ` player=(${g.player.x.toFixed(0)},${g.player.y.toFixed(0)})`;
+        crashed = `SOFTLOCK in b${run.biome} s${run.step} ${curPlan?.type} state=${rc.state} mode=${g.mode} enemies=${g.aliveEnemies()} pending=${rc.pending.length} wave=${rc.waveIdx}/${rc.waves.length} :: ` + g.enemies.live.filter((e) => e.active).map((e) => `${e.def.id}[st${e.st} t${e.t.toFixed(1)} (${e.x.toFixed(0)},${e.y.toFixed(0)}) hp${e.hp.toFixed(0)} ${e.untargetable ? 'UNTARG ' : ''}${e.invuln ? 'INV ' : ''}${e.spawnT > 0 ? 'SPAWN ' : ''}${e.latched ? 'LATCH' : ''}]`).join(' ') + ` player=(${g.player.x.toFixed(0)},${g.player.y.toFixed(0)}) act=${g.player.act?.id ?? '-'} halos=${g.projectiles.live.filter((q) => q.active && q.kind === 8).map((q) => `st${q.st}@(${q.x.toFixed(0)},${q.y.toFixed(0)})`).join(',')} ws=${JSON.stringify(g.player.ws)} wref=${JSON.stringify(g.player.wref)} hid=${g.projectiles.live.filter((q) => q.active && q.kind === 8).map((q) => q.id).join(",")}`;
         break;
       }
     }

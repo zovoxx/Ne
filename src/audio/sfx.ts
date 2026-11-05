@@ -411,6 +411,12 @@ export class Sfx {
     this.nz('highpass', 6000, 9000, 0.6, 0.4, 0.05, 0.1, 0.1);
   }
 
+  chargeReady() {
+    if (!this.ready('charge', 0.1, 2)) return;
+    this.osc('triangle', 1568, 1568, 0.16, 0.09);
+    this.osc('sine', 2350, 2350, 0.12, 0.05, 0.02);
+  }
+
   burrow() {
     if (!this.ready('burrow', 0.1)) return;
     this.nz('lowpass', 600, 200, 1, 0.35, 0.25);

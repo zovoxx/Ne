@@ -303,6 +303,16 @@ export function updateProjectiles(g: Game, dt: number) {
         if (p.kind === PJ.PowerArrow) info.pierceShield = p.a > 0;
         damageEnemy(g, e, p.dmg, info);
         g.effects.onPlayerProjectileHit(g, p, e, info);
+        if (p.kind === PJ.PowerArrow && p.b === 1) {
+          // splitting star: shatter into three arrows
+          p.b = 0;
+          const base = Math.atan2(p.vy, p.vx);
+          for (let k = -1; k <= 1; k++) {
+            const s = firePlayer(g, PJ.Arrow, p.x, p.y, base + k * 0.5, 1000, p.dmg * 0.4, p.slot, 0.25, 8, 'arrow');
+            s.hits.push(e.id);
+            s.life = s.maxLife = 0.35;
+          }
+        }
         if (p.power >= 0.3 || info.outCrit || info.outKilled) g.requestHitstop(p.power * 0.85, info.outCrit, info.outKilled);
         if (info.outBlocked) {
           killProjectile(g, p, true);

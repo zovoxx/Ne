@@ -376,11 +376,22 @@ export class Game {
         const dy = b.y - a.y;
         const rr = a.r + b.r;
         const d2 = dx * dx + dy * dy;
-        if (d2 >= rr * rr || d2 < 0.0001) continue;
-        const d = Math.sqrt(d2);
+        if (d2 >= rr * rr) continue;
+        let nx: number;
+        let ny: number;
+        let d: number;
+        if (d2 < 0.0001) {
+          // exactly stacked: separate along a direction derived from their ids
+          const ang = (a.id * 2.399 + b.id * 0.917) % (Math.PI * 2);
+          nx = Math.cos(ang);
+          ny = Math.sin(ang);
+          d = 0;
+        } else {
+          d = Math.sqrt(d2);
+          nx = dx / d;
+          ny = dy / d;
+        }
         const pen = (rr - d) * 0.5;
-        const nx = dx / d;
-        const ny = dy / d;
         const ma = a.def.noKnock ? 8 : a.mass;
         const mb = b.def.noKnock ? 8 : b.mass;
         const wa = mb / (ma + mb);
@@ -394,6 +405,7 @@ export class Game {
         if (ka > 250) {
           b.kx += nx * ka * 0.5;
           b.ky += ny * ka * 0.5;
+          if (ka > 380) this.effects.ext.onKnockCollide?.(this, a, b, ka);
         }
       }
       // player body: enemies yield to the player (keeps control), heavy ones push back
@@ -525,7 +537,7 @@ export class Game {
   hurtPlayer(amount: number, sx: number, sy: number, src: Enemy | null): boolean {
     const p = this.player;
     if (this.mode !== 'play' || p.invulnerable || amount <= 0) return false;
-    if (this.stats.dodge > 0 && this.rng.chance(this.stats.dodge)) {
+    if (this.stats.dodge + p.buffDodge > 0 && this.rng.chance(Math.min(0.6, this.stats.dodge + p.buffDodge))) {
       const ev = this.events.push(EV.Text, p.x, p.y - 30);
       ev.key = 'DODGE';
       p.hurtT = 0.25;

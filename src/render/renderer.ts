@@ -489,6 +489,7 @@ export class Renderer {
     P.root.zIndex = p.y;
     P.root.visible = !p.dead || g.mode === 'dying';
     const wkey = 'w_' + p.weapon.id;
+    P.weapon.visible = !(p.weapon.id === 'halo' && (p.ws.out ?? 0) > 0);
     if (P.weaponKey !== wkey) {
       P.weaponKey = wkey;
       P.weapon.texture = A.get(wkey);
@@ -559,6 +560,18 @@ export class Renderer {
     let off = 14;
     let ang2 = p.facing - 0.9 * flip;
     const a = p.act;
+    if (p.weapon.id === 'bow') {
+      // the bow is held out toward the aim; drawing pulls it in slightly
+      const aim = a ? p.actAngle : p.facing;
+      const drawK = a && p.phase === PH.Hold ? Math.min(1, p.ws.k ?? 0) : 0;
+      w.x = Math.cos(aim) * (18 - drawK * 4);
+      w.y = Math.sin(aim) * (14 - drawK * 3) - 6;
+      w.rotation = aim;
+      w.scale.set(1 + drawK * 0.15, 1);
+      w.zIndex = Math.sin(aim) < -0.2 ? -1 : 1;
+      return;
+    }
+    w.scale.set(1, 1);
     if (a && (a.kind === 'attack' || a.kind === 'dashAttack' || a.kind === 'special')) {
       const side = (a.step ?? 0) % 2 === 0 ? 1 : -1;
       const base = p.actAngle;
@@ -1208,10 +1221,12 @@ export class Renderer {
     const ah = A.y1 - A.y0;
     const marginTop = 90;
     const marginOther = 40;
+    // extra space below the arena so the player never sits under the right-thumb buttons
+    const marginBottom = 120;
     if (aw + marginOther * 2 <= viewW) tx = (A.x0 + A.x1) / 2;
     else tx = clamp(tx, A.x0 - marginOther + viewW / 2, A.x1 + marginOther - viewW / 2);
-    if (ah + marginTop + marginOther <= viewH) ty = (A.y0 + A.y1) / 2 - (marginTop - marginOther) / 2;
-    else ty = clamp(ty, A.y0 - marginTop + viewH / 2, A.y1 + marginOther - viewH / 2);
+    if (ah + marginTop + marginBottom <= viewH) ty = (A.y0 + A.y1) / 2 - (marginTop - marginBottom) / 2;
+    else ty = clamp(ty, A.y0 - marginTop + viewH / 2, A.y1 + marginBottom - viewH / 2);
     if (this.cam.x === 0 && this.cam.y === 0) {
       this.cam.x = tx;
       this.cam.y = ty;
@@ -1643,8 +1658,36 @@ export class Renderer {
         break;
       }
       case EV.Lightning:
-        this.lightning(ev.x, ev.y, ev.dx, ev.dy, ELEMENT_COLOR.storm);
+        this.lightning(ev.x, ev.y, ev.dx, ev.dy, ev.flag === 1 ? 0xe2d4ff : ELEMENT_COLOR.storm);
         break;
+      case EV.ChargeReady: {
+        const ring = this.particles.spawn(A.get('ring'), g.player.x, g.player.y - 4, true);
+        ring.max = 0.22;
+        ring.s0 = 0.7;
+        ring.s1 = 0.2;
+        ring.s.tint = ev.color;
+        const f = this.particles.spawn(A.get('glow'), g.player.x, g.player.y - 6, true);
+        f.max = 0.15;
+        f.s0 = 1.4;
+        f.s1 = 0.6;
+        f.s.tint = 0xffffff;
+        this.player.sqv += 5;
+        break;
+      }
+      case EV.Catch:
+      case EV.Recall: {
+        for (let i = 0; i < 8; i++) {
+          const a = vrand() * TAU;
+          const p = this.particles.spawn(A.get('spark'), ev.x, ev.y, true);
+          p.vx = Math.cos(a) * 220;
+          p.vy = Math.sin(a) * 220;
+          p.stretch = 0.004;
+          p.max = 0.18;
+          p.s.tint = 0xffd36b;
+        }
+        if (ev.type === EV.Catch) this.player.sqv += 4;
+        break;
+      }
       case EV.StatusProc: {
         const ring = this.particles.spawn(A.get('ring'), ev.x, ev.y, true);
         ring.max = 0.25;

@@ -141,6 +141,16 @@ export class Presenter {
       case EV.Teleport:
         s.teleport();
         break;
+      case EV.ChargeReady:
+        s.chargeReady();
+        this.haptics.pulse(12);
+        break;
+      case EV.Catch:
+        s.pickup();
+        break;
+      case EV.Recall:
+        s.deflect();
+        break;
       default:
         break;
     }

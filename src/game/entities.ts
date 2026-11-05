@@ -293,6 +293,7 @@ export const HZ = {
   Radiance: 18,
   Hex: 19,
   Vortex: 20,
+  Rain: 21,
 } as const;
 
 export class Hazard {

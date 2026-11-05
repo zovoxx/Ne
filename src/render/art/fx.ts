@@ -323,6 +323,35 @@ export function drawBeam(c: Ctx, w: number, h: number) {
   c.fillRect(0, 0, w, h);
 }
 
+export function drawMoonWave(c: Ctx, w: number, h: number) {
+  // crescent facing +x
+  c.beginPath();
+  c.arc(w * 0.2, h / 2, h * 0.48, -1.2, 1.2);
+  c.arc(w * 0.05, h / 2, h * 0.42, 1.05, -1.05, true);
+  c.closePath();
+  glow(c, '#9fe7ff', 6);
+  fill(c, linear(c, 0, 0, w, 0, [
+    [0, 'rgba(159,231,255,0.3)'],
+    [1, 'rgba(255,255,255,1)'],
+  ]));
+  noGlow(c);
+}
+
+export function drawWindBlade(c: Ctx, w: number, h: number) {
+  c.beginPath();
+  c.moveTo(0, h * 0.5);
+  c.quadraticCurveTo(w * 0.5, h * 0.05, w, h * 0.45);
+  c.quadraticCurveTo(w * 0.5, h * 0.35, 0, h * 0.5);
+  glow(c, '#8dffc8', 5);
+  fill(c, 'rgba(230,255,244,0.95)');
+  c.beginPath();
+  c.moveTo(w * 0.1, h * 0.62);
+  c.quadraticCurveTo(w * 0.55, h * 0.95, w * 0.9, h * 0.62);
+  c.quadraticCurveTo(w * 0.5, h * 0.72, w * 0.1, h * 0.62);
+  fill(c, 'rgba(141,255,200,0.8)');
+  noGlow(c);
+}
+
 /* ─────────────── damage digits ─────────────── */
 
 export function makeDigit(ch: string, crit: boolean) {

@@ -89,6 +89,14 @@ export class Player {
   pullX = 0;
   pullY = 0;
   pullSpeed = 0;
+  /** temporary buffs from boons */
+  buffSpeed = 0;
+  buffSpeedT = 0;
+  buffDodge = 0;
+  barrier = 0;
+  /** dawn / sunstreak: forced crits remaining and their expiry */
+  nextCrits = 0;
+  nextCritT = 0;
   /** external velocity (gravity wells etc.), reset each step */
   extVx = 0;
   extVy = 0;
@@ -117,6 +125,8 @@ export class Player {
     this.pullT = 0;
     this.specialCd = 0;
     this.damageTaken = 0;
+    this.buffSpeed = this.buffSpeedT = this.buffDodge = this.barrier = 0;
+    this.nextCrits = 0;
   }
 
   get invulnerable() {
@@ -154,7 +164,8 @@ export function pickTarget(g: Game, p: Player, range: number, ranged: boolean, i
     if (d > range) continue;
     const ang = Math.abs(angleDiff(dir, Math.atan2(dy, dx)));
     const inCone = ang <= cone;
-    if (!inCone && (input.aimActive || d > A.closeRadius)) continue;
+    // melee only snaps outside the cone to things right next to you; ranged weapons fall back to anything in range
+    if (!inCone && (input.aimActive || (d > A.closeRadius && !ranged))) continue;
     let score = Math.max(0, d) / range + (ang / Math.PI) * A.angleWeight;
     if (!inCone) score += 0.6;
     if (e === p.target) score -= A.stickiness;
@@ -237,6 +248,7 @@ export function startAction(g: Game, p: Player, spec: ActionSpec, input: InputFr
   p.facing = p.actAngle;
   p.lastActKind = spec.kind;
   spec.start?.(g, p);
+  g.effects.ext.onAction?.(g, spec.kind);
   if (spec.windup <= 0) advancePhase(g, p);
 }
 
@@ -418,7 +430,11 @@ export function updatePlayer(g: Game, p: Player, dt: number, input: InputFrame) 
   if (!p.act && g.time - p.lastAttackEndT > (p.weapon.id === 'anvil' ? 0.38 : 0.32)) p.comboStep = -1;
 
   // ── movement ──
-  const maxSpeed = T.player.maxSpeed * (1 + st.moveSpeed) * (1 - Math.min(0.6, p.latchSlow + p.zoneSlow));
+  if (p.buffSpeedT > 0) {
+    p.buffSpeedT -= dt;
+    if (p.buffSpeedT <= 0) p.buffSpeed = p.buffDodge = 0;
+  }
+  const maxSpeed = T.player.maxSpeed * (1 + st.moveSpeed + p.buffSpeed) * (1 - Math.min(0.6, p.latchSlow + p.zoneSlow));
   p.zoneSlow = 0;
   p.latchSlow = 0;
   if (p.dashing) {

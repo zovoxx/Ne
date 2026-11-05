@@ -90,8 +90,8 @@ export function meleeCircle(g: Game, p: Player, slot: Slot, x: number, y: number
 /** weapon forge damage bonus (set by forge upgrades) */
 export function forgeMul(g: Game, slot: Slot) {
   const s = g.stats;
-  if (slot === 'attack') return 1 + s.val('forgeAttack');
-  if (slot === 'special') return 1 + s.val('forgeSpecial');
+  if (slot === 'attack') return 1 + s.val('forgeAttack') * 0.2;
+  if (slot === 'special') return 1 + s.val('forgeSpecial') * 0.3;
   return 1;
 }
 

@@ -268,6 +268,10 @@ export class Effects {
 }
 
 export interface EffectExt {
+  forceCrit(g: Game, e: Enemy, info: HitInfo): boolean;
+  critBonus(g: Game, e: Enemy, info: HitInfo): number;
+  onAction(g: Game, kind: string): void;
+  onKnockCollide(g: Game, a: Enemy, b: Enemy, speed: number): void;
   chillNeedMod(g: Game, e: Enemy): number;
   afterElement(g: Game, e: Enemy, el: Element, pow: number, slot: Slot): void;
   onFreeze(g: Game, e: Enemy): void;

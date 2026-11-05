@@ -21,7 +21,7 @@ export interface Door {
 }
 
 /** which patrons can appear (meta-progression unlocks) */
-export const PATRON_POOL: { ids: PatronId[] } = { ids: ['ember', 'rime', 'storm', 'tide'] };
+export const PATRON_POOL: { ids: PatronId[] } = { ids: ['ember', 'rime', 'storm', 'tide', 'dawn', 'gale', 'umbra', 'thorn'] };
 
 function pickPatron(rng: RNG, avoid: PatronId[]): PatronId {
   const pool = PATRON_POOL.ids.filter((p) => !avoid.includes(p));

@@ -20,6 +20,7 @@ export class BotBrain {
   private lastX = 0;
   private lastY = 0;
   private blockedT = 0;
+  private bowT = 0;
   skill = 1;
 
   think(g: Game, rc: RoomController | null, f: InputFrame, dt: number) {
@@ -162,7 +163,9 @@ export class BotBrain {
       }
     }
 
-    const ranged = p.weapon.ranged;
+    // long fights: stop being careful and commit
+    const aggressive = !!rc && rc.roomT > 60;
+    const ranged = p.weapon.ranged && !aggressive;
     let mx = 0;
     let my = 0;
     if (target) {
@@ -208,10 +211,25 @@ export class BotBrain {
           f.held.attack = false;
         } else this.blockedT = 0;
       }
-      const blocked = target.frontShield > 0 && Math.abs(angleDiff(target.facing, Math.atan2(p.y - target.y, p.x - target.x))) < target.frontShield / 2;
+      const blocked = !aggressive && ((target.frontShield > 0 && Math.abs(angleDiff(target.facing, Math.atan2(p.y - target.y, p.x - target.x))) < target.frontShield / 2) || target.parry || target.invuln);
+      if (target.parry && d < 160 && !aggressive) {
+        mx = -dx / d;
+        my = -dy / d;
+      }
+      if (blocked && p.weapon.id === 'halo') f.held.attack = true;
       if ((d < want + 70 || ranged) && !blocked) {
-        f.held.attack = true;
-        if (Math.random() < 0.3) f.pressed.attack = true;
+        if (p.weapon.id === 'bow') {
+          // draw, release, repeat (mix of power shots and quick taps)
+          this.bowT += dt;
+          f.held.attack = this.bowT % 0.75 < 0.5;
+          if (this.bowT % 0.75 < dt) f.pressed.attack = true;
+        } else if (p.weapon.id === 'halo') {
+          // hold: throws on every catch (a fresh press would recall it early)
+          f.held.attack = true;
+        } else {
+          f.held.attack = true;
+          if (Math.random() < 0.3) f.pressed.attack = true;
+        }
       }
       if (this.specialCd <= 0 && d < (ranged ? 600 : 200)) {
         f.pressed.special = true;

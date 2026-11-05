@@ -145,6 +145,7 @@ export function updateHazards(g: Game, dt: number) {
         break;
       }
       case HZ.Pulse: {
+        if (h.team !== TEAM_ENEMY) break;
         // ring radius grows from 0 → r over its life
         const k = 1 - h.life / h.maxLife;
         const cur = h.r * k;
@@ -234,6 +235,35 @@ export function updateHazards(g: Game, dt: number) {
           const info = dotInfo(0x9cff5a);
           damageEnemy(g, e, h.dmg, info);
         });
+        break;
+      case HZ.Rain:
+        // starfall: a burst of hits on everything inside, h.a hits remaining
+        h.tickT -= dt;
+        if (h.tickT <= 0 && h.a > 0) {
+          h.tickT = h.tick;
+          h.a--;
+          const ev = g.events.push(EV.Lightning, h.x + (Math.random() - 0.5) * h.r, h.y - 280);
+          ev.dx = h.x + (Math.random() - 0.5) * h.r * 1.4;
+          ev.dy = h.y + (Math.random() - 0.5) * h.r * 1.2;
+          ev.flag = 1;
+          let any = false;
+          for (const e of g.enemies.live) {
+            if (!e.targetable) continue;
+            if ((e.x - h.x) ** 2 + (e.y - h.y) ** 2 > (h.r + e.r) ** 2) continue;
+            const info = hitInfo();
+            info.slot = 'special';
+            info.power = 0.3;
+            info.knock = 0.25;
+            info.dirX = 0;
+            info.dirY = 1;
+            info.srcX = e.x;
+            info.srcY = e.y - 30;
+            info.pierceShield = true;
+            damageEnemy(g, e, h.dmg, info);
+            any = true;
+          }
+          if (any) g.requestHitstop(0.25, false, false);
+        }
         break;
       case HZ.Radiance:
         enemyTick(g, h, dt, (e) => {

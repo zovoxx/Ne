@@ -171,7 +171,14 @@ export class RoomController implements RoomLogic {
       s.t -= dt;
       if (s.t <= 0) {
         this.pending.splice(i, 1);
-        g.spawnEnemy(enemyDef(s.def), s.x, s.y, { elite: s.elite, hpMul: 1 + this.plan.step * TUNING.scaling.hpPerStep });
+        const d = enemyDef(s.def);
+        // cap how many of one type can be alive at once (healers/summoners stacking is degenerate)
+        if (d.max) {
+          let alive = 0;
+          for (const e of g.enemies.live) if (e.active && e.def === d) alive++;
+          if (alive >= d.max + 1) continue;
+        }
+        g.spawnEnemy(d, s.x, s.y, { elite: s.elite, hpMul: 1 + this.plan.step * TUNING.scaling.hpPerStep });
       }
     }
     switch (this.state) {
@@ -328,8 +335,9 @@ export class RoomController implements RoomLogic {
 
   private tryPoint(g: Game, x: number, y: number, r: number, minD: number, maxD: number) {
     const A = g.arena;
-    const cx = clamp(x, A.x0 + r + 30, A.x1 - r - 30);
-    const cy = clamp(y, A.y0 + r + 30, A.y1 - r - 30);
+    // jitter so points clamped to the same wall never stack exactly
+    const cx = clamp(x, A.x0 + r + 30, A.x1 - r - 30) + this.rng.range(-18, 18);
+    const cy = clamp(y, A.y0 + r + 30, A.y1 - r - 30) + this.rng.range(-18, 18);
     const p = g.player;
     if (!g.pointBlocked(cx, cy, r + 4) && Math.hypot(cx - p.x, cy - p.y) > Math.min(140, minD)) return { x: cx, y: cy };
     return g.freePointNear(p.x, p.y, Math.max(150, minD), Math.max(220, maxD), r);

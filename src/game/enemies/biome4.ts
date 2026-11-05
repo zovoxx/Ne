@@ -76,6 +76,10 @@ export const voidcaller: EnemyDef = {
         break;
     }
   },
+  onRemove(e, g) {
+    // the caller's portals collapse with it
+    for (const o of g.enemies.live) if (o.active && o.parent === e && o.def.id === 'voidportal') g.kill(o);
+  },
 };
 
 export const voidportal: EnemyDef = {

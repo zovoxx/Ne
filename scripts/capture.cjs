@@ -38,7 +38,7 @@ fs.mkdirSync(out, { recursive: true });
     else if (s.doors > 0 && s.state === 'doors') key = 'doors';
     else if (s.type === 'shop') key = 'shop';
     else if (s.mode === 'dead' || s.mode === 'victory') key = 'death';
-    else if (s.enemies > 6) key = 'fight';
+    else if (s.enemies > 3) key = "fight";
     if (key && (seen[key] || 0) < 2) {
       seen[key] = (seen[key] || 0) + 1;
       await page.waitForTimeout(key === 'choice' ? 150 : 250);

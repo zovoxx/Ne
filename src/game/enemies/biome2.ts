@@ -281,7 +281,8 @@ export const tidecleric: EnemyDef = {
           let best: Enemy | null = null;
           let bk = 0.92;
           for (const o of g.enemies.live) {
-            if (!o.targetable || o === e || o.isBoss) continue;
+            if (!o.targetable || o === e || o.isBoss || o.def.id === 'tidecleric') continue;
+            if ((o.data.healedT ?? 0) > g.time) continue;
             if ((o.x - e.x) ** 2 + (o.y - e.y) ** 2 > 420 * 420) continue;
             const k = o.hp / o.maxHp;
             if (k < bk) {
@@ -315,7 +316,8 @@ export const tidecleric: EnemyDef = {
         }
         if (e.t >= 0.6) {
           g.clearTelegraphs(e);
-          const amt = Math.round(o.maxHp * 0.32);
+          const amt = Math.round(o.maxHp * 0.28);
+          o.data.healedT = g.time + 4;
           o.hp = Math.min(o.maxHp, o.hp + amt);
           const ev = g.events.push(EV.Heal, o.x, o.y);
           ev.amount = amt;

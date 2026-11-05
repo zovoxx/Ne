@@ -66,6 +66,8 @@ const A: Record<string, AssetSpec> = {
   arrow: { w: 34, h: 10, draw: FX.drawArrow },
   bolt: { w: 46, h: 12, draw: FX.drawBolt },
   sigil: { w: 128, h: 128, draw: FX.drawSigil },
+  moonWave: { w: 40, h: 64, draw: FX.drawMoonWave },
+  windBlade: { w: 34, h: 18, draw: FX.drawWindBlade },
 
   // ─── player & weapons ───
   player: { w: 46, h: 52, ay: 0.62, draw: CH.drawPlayer, sil: true },

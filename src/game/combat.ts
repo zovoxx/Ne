@@ -115,9 +115,12 @@ export function damageEnemy(g: Game, e: Enemy, base: number, info: HitInfo): num
   if (e.data.vuln && (e.stun > 0 || (e.data.vulnT ?? 0) > g.time)) mul += e.data.vuln;
   mul = g.effects.modifyDamage(g, e, info, mul);
   let crit = info.forceCrit;
+  const ext = g.effects.ext;
+  if (!crit && !info.isDot && ext.forceCrit && ext.forceCrit(g, e, info)) crit = true;
   if (!crit && !info.isDot) {
     let chance = TUNING.crit.baseChance + S.critChance + info.critBonus;
     if (e.mark > 0) chance += S.dawnMarkCrit;
+    if (ext.critBonus) chance += ext.critBonus(g, e, info);
     crit = g.rng.next() < chance;
   }
   let dmg = base * mul * (crit ? TUNING.crit.multiplier + S.critMul + (e.mark > 0 ? S.dawnCritDmg : 0) : 1);
