@@ -35,13 +35,14 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE).then((c) => c.put('./', copy));
           return res;
         })
-        .catch(() => caches.match('./').then((r) => r || caches.match('./index.html'))),
+        .catch(() => caches.match('./', { ignoreVary: true, ignoreSearch: true }).then((r) => r || caches.match('./index.html', { ignoreVary: true }))),
     );
     return;
   }
   // Everything else: cache first (hashed assets are immutable).
   event.respondWith(
-    caches.match(req).then(
+    // ignoreVary: module scripts send an Origin header that precache requests didn't
+    caches.match(req, { ignoreVary: true }).then(
       (hit) =>
         hit ||
         fetch(req).then((res) => {

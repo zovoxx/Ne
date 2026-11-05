@@ -25,12 +25,15 @@ function rt(p: Player): HaloRT {
   return p.wref as HaloRT;
 }
 
+// reused every frame (no allocations in the hot path)
+const HALO_LIST: Projectile[] = [];
 function halos(g: Game, p: Player): Projectile[] {
   const r = rt(p);
-  const out: Projectile[] = [];
-  for (const pr of g.projectiles.live) if (pr.active && pr.kind === PJ.Halo && r.ids.includes(pr.id)) out.push(pr);
-  r.ids = out.map((h) => h.id);
-  return out;
+  HALO_LIST.length = 0;
+  for (const pr of g.projectiles.live) if (pr.active && pr.kind === PJ.Halo && r.ids.indexOf(pr.id) >= 0) HALO_LIST.push(pr);
+  r.ids.length = 0;
+  for (const h of HALO_LIST) r.ids.push(h.id);
+  return HALO_LIST;
 }
 
 function throwHalo(g: Game, p: Player, angle: number, finisher: boolean, dmgMul: number, slot: Slot) {
@@ -206,7 +209,7 @@ const orbitSpec: ActionSpec = {
   moveMul: 0.8,
   chainAt: 0.2,
   active_(g, p) {
-    let list = halos(g, p);
+    let list = halos(g, p).slice();
     if (!list.length) list = [throwHalo(g, p, p.facing, false, 1, 'special')];
     list.forEach((pr, i) => {
       pr.st = 3;

@@ -220,7 +220,7 @@ export class Screens {
 
   /* ───────── title ───────── */
 
-  showTitle(a: { cont?: () => void; contInfo?: string; play: () => void; wick: () => void; settings: () => void; install?: () => void; line?: string }) {
+  showTitle(a: { cont?: () => void; contInfo?: string; play: () => void; wick: () => void; settings: () => void; install?: () => void; line?: string; iosHint?: boolean }) {
     const el = this.mount(
       `<div class="title-screen">
         <div class="logo">LANTERNFALL</div>
@@ -233,6 +233,7 @@ export class Screens {
             <button class="btn-ui" data-a="settings">Settings</button>
           </div>
           ${a.install ? `<button class="btn-ui small" data-a="install">Install as app</button>` : ''}
+          ${a.iosHint ? `<div class="ios-hint">For true fullscreen on iPhone/iPad: tap <b>Share</b> → <b>Add to Home Screen</b>, then launch Lanternfall from your home screen.</div>` : ''}
         </div>
       </div>`,
       'overlay title',

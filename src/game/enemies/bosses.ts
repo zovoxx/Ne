@@ -464,7 +464,7 @@ const engineSpec: BossSpec = {
           e.c = 1;
           const n = e.phase >= 2 ? 3 : 2;
           for (let k = 0; k < n; k++) {
-            const h = addHazard(g, HZ.Beam, TEAM_ENEMY, e.x, e.y, 700, 3, D(e, 0.75), 0xff4a2a, e);
+            const h = addHazard(g, HZ.Beam, TEAM_ENEMY, e.x, e.y, 700, 3, D(e, 0.65), 0xff4a2a, e);
             h.angle = (k * TAU) / n + e.b * 0.2;
             h.a = e.b * (e.phase >= 2 ? 1.0 : e.phase >= 1 ? 0.85 : 0.7);
             h.w = 18;
@@ -590,7 +590,7 @@ export const bossEngine: EnemyDef = {
   blurb: 'Boss of the Clockwork Foundry.',
   biome: 3,
   roles: ['elite'],
-  hp: 1300,
+  hp: 1180,
   speed: 90,
   radius: 50,
   mass: 30,

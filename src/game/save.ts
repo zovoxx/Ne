@@ -51,7 +51,7 @@ export function defaultMeta(): MetaSave {
     storyQueue: [],
     seenPairs: [],
     seenEnemies: [],
-    settings: { master: 0.8, sfx: 0.9, music: 0.45, haptics: true, shake: 1, showFps: false, quality: 'auto' },
+    settings: { master: 0.8, sfx: 0.9, music: 0.5, haptics: true, shake: 1, showFps: false, quality: 'auto' },
   };
 }
 

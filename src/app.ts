@@ -24,6 +24,9 @@ import { ENCOUNTER_CTX } from './game/encounters';
 import { applyMeta, buy as buyUnlock, canBuy, has, KEEPSAKE_IDS, UNLOCKS, weaponUnlocked } from './game/meta';
 import { lastStoryLine, nextStoryLine } from './game/story';
 import type { Enemy } from './game/entities';
+import { Music } from './audio/music';
+import { Platform } from './platform/pwa';
+import { DebugMenu } from './ui/debug';
 
 export class App {
   renderer = new Renderer();
@@ -48,6 +51,17 @@ export class App {
   autoplay = false;
   bot: BotBrain | null = null;
   private botT = 0;
+  music = new Music(this.sfx);
+  platform = new Platform();
+  debug: DebugMenu | null = null;
+  /** debug time multiplier */
+  timeScale = 1;
+  /** CPU time of the last frame (update + render), ms */
+  frameMs = 0;
+  private frameEma = 16;
+  private govT = 0;
+  private hintT = 0;
+  private controlsShown = true;
 
   async boot() {
     const ui = document.getElementById('ui')!;
@@ -59,11 +73,12 @@ export class App {
     controls.innerHTML = `
       <div class="stick-hint"></div>
       <div class="stick-base"></div><div class="stick-knob"></div>
-      <div class="btn" data-btn="attack">${ICONS.attack}</div>
-      <div class="btn" data-btn="special">${ICONS.special}</div>
-      <div class="btn" data-btn="dash">${ICONS.dash}<div class="charges"></div></div>
-      <div class="btn" data-btn="cast">${ICONS.cast}<div class="charges"></div></div>`;
+      <div class="btn" data-btn="attack">${ICONS.attack}<span class="lbl">ATTACK</span></div>
+      <div class="btn" data-btn="special">${ICONS.special}<span class="lbl">SPECIAL</span></div>
+      <div class="btn" data-btn="dash">${ICONS.dash}<div class="charges"></div><span class="lbl">DASH</span></div>
+      <div class="btn" data-btn="cast">${ICONS.cast}<div class="charges"></div><span class="lbl">SIGIL</span></div>`;
     document.body.appendChild(controls);
+    this.platform.init();
     const rotate = document.createElement('div');
     rotate.id = 'rotate';
     rotate.innerHTML = `<div class="phone"></div><div>Rotate your device to landscape</div>`;
@@ -86,9 +101,15 @@ export class App {
     this.renderer.doors = new Doors(this.renderer.atlas, this.renderer.entityLayer, this.renderer.particles, () => this.rc);
     this.applySettings();
 
-    const unlock = () => this.sfx.unlock();
+    const unlock = () => {
+      this.sfx.unlock();
+      this.music.start();
+    };
     window.addEventListener('pointerdown', unlock, { capture: true });
     window.addEventListener('keydown', unlock, { capture: true });
+    // Android / desktop: first tap goes fullscreen + landscape (iOS needs the home-screen app)
+    window.addEventListener('pointerdown', () => void this.platform.enterFullscreen(), { capture: true, once: true });
+    if (import.meta.env.DEV || new URLSearchParams(location.search).has('debug')) this.debug = new DebugMenu(this);
     this.hud.onPause = () => this.togglePause();
     this.input.onPause = () => this.togglePause();
     this.presenter.listeners.push((game, ev) => {
@@ -151,11 +172,40 @@ export class App {
 
   /* ─────────────── menus ─────────────── */
 
+  /** quality 0..1: particle density and render resolution */
+  setQuality(q: number) {
+    const r = this.renderer;
+    if (Math.abs(r.quality - q) < 0.01) return;
+    r.quality = q;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const res = q >= 0.95 ? dpr : q >= 0.65 ? Math.min(dpr, 1.6) : Math.min(dpr, 1.25);
+    if (Math.abs(r.app.renderer.resolution - res) > 0.01) {
+      r.app.renderer.resolution = res;
+      r.app.renderer.resize(window.innerWidth, window.innerHeight);
+      r.resize();
+    }
+  }
+
+  /** auto quality: steps down when frames run long, back up when there's headroom */
+  private governor(dt: number) {
+    if (this.meta.settings.quality !== 'auto' || this.bot) return;
+    this.govT += dt;
+    if (this.govT < 2) return;
+    this.govT = 0;
+    const ms = this.frameEma;
+    const q = this.renderer.quality;
+    if (this.fps < 50 && q > 0.4) this.setQuality(q > 0.8 ? 0.7 : 0.4);
+    else if (this.fps > 58 && ms < 9 && q < 1) this.setQuality(q < 0.6 ? 0.7 : 1);
+  }
+
   showTitle() {
     this.game.mode = 'menu';
     this.hud.show(false);
     const saved = loadRun();
+    const iosHint = this.platform.isIOS && !this.platform.standalone;
     this.screens.showTitle({
+      install: this.platform.canInstall ? () => void this.platform.install() : undefined,
+      iosHint,
       cont: saved ? () => this.startRun(true) : undefined,
       contInfo: saved ? `${BIOME_NAMES[saved.biome]} · room ${saved.rooms}` : undefined,
       play: () => this.startRun(false),
@@ -182,6 +232,8 @@ export class App {
 
   applySettings() {
     const s = this.meta.settings;
+    if (s.quality === 'high') this.setQuality(1);
+    else if (s.quality === 'low') this.setQuality(0.4);
     this.sfx.volumes.master = s.master;
     this.sfx.volumes.sfx = s.sfx;
     this.sfx.volumes.music = s.music;
@@ -276,6 +328,12 @@ export class App {
     this.rc.enter(g, plan);
     this.hud.show(true);
     this.refreshBoons();
+    void this.platform.requestWakeLock();
+    // first runs: label the controls
+    if (this.meta.runs <= 2 && !this.bot) {
+      document.body.classList.add('hints');
+      this.hintT = 25;
+    }
   }
 
   private roomHooks(): RoomHooks {
@@ -311,6 +369,7 @@ export class App {
         this.saveProgress();
       },
       cleared: (plan) => {
+        if (this.hintT > 8) this.hintT = 8;
         if (plan.type === 'boss') {
           const first = (this.meta.bossKills[plan.biome] ?? 0) === 0;
           this.meta.bossKills[plan.biome] = (this.meta.bossKills[plan.biome] ?? 0) + 1;
@@ -417,6 +476,7 @@ export class App {
     saveMeta(this.meta);
     saveRun(null);
     this.hud.show(false);
+    this.platform.releaseWakeLock();
     const m = Math.floor(run.time / 60);
     const s = Math.floor(run.time % 60);
     const summary = {
@@ -514,6 +574,7 @@ export class App {
       this.fpsT = 0;
     }
     const g = this.game;
+    const t0 = performance.now();
     this.input.enabled = !this.screens.open && (g.mode === 'play' || g.mode === 'dying');
     if (this.bot) {
       this.bot.think(g, this.rc, g.input, dt);
@@ -525,14 +586,36 @@ export class App {
         }
       }
     } else this.input.update(this.screenToWorld);
-    if (!this.paused) g.update(dt);
+    if (!this.paused) g.update(dt * this.timeScale);
     if (this.deathT > 0) {
       this.deathT -= dt;
       if (this.deathT <= 0) this.endRun(false);
     }
     this.presenter.drain(g, dt);
     this.renderer.fade = this.rc ? this.rc.fade : 0;
-    this.renderer.render(g, this.paused ? 0 : dt);
+    this.renderer.render(g, this.paused ? 0 : dt * this.timeScale);
     this.hud.update(g, dt);
+    // music follows the fight
+    const m = this.music;
+    m.biome = g.biome;
+    m.intensity = g.streakTier;
+    m.combat = (g.mode === 'play' || g.mode === 'dying') && g.aliveEnemies() > 0;
+    let boss = false;
+    for (const e of g.enemies.live) if (e.active && e.isBoss) boss = true;
+    m.boss = boss;
+    if (this.hintT > 0) {
+      this.hintT -= dt;
+      if (this.hintT <= 0) document.body.classList.remove('hints');
+    }
+    // touch controls only during gameplay
+    const showControls = g.mode === 'play' || g.mode === 'dying' || g.mode === 'transition';
+    if (showControls !== this.controlsShown) {
+      this.controlsShown = showControls;
+      document.body.classList.toggle('in-menu', !showControls);
+    }
+    this.frameMs = performance.now() - t0;
+    this.frameEma += (this.frameMs - this.frameEma) * 0.05;
+    this.governor(dt);
+    this.debug?.tick();
   };
 }

@@ -29,13 +29,14 @@ function serviceWorkerPlugin(): Plugin {
       const precache = files.filter(
         (f) => f !== 'sw.js' && !f.startsWith('_') && !f.endsWith('.map') && f !== 'wrangler.jsonc',
       );
+      const template = readFileSync('src/platform/sw-template.js', 'utf8');
       const hash = createHash('sha1');
+      hash.update(template);
       for (const f of precache.sort()) {
         hash.update(f);
         hash.update(readFileSync(join(outDir, f)));
       }
       const version = hash.digest('hex').slice(0, 12);
-      const template = readFileSync('src/platform/sw-template.js', 'utf8');
       const sw = template
         .replace('__VERSION__', version)
         .replace('__PRECACHE__', JSON.stringify(['./', ...precache.map((f) => './' + f)]));
