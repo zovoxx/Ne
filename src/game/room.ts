@@ -8,6 +8,8 @@ import { makeArena, nextDoors, type Door } from './rooms';
 import { planEncounter, type SpawnGroup, type Wave } from './encounters';
 import { boonOffer, forgeOffer, goldOffer, heartOffer, kindleOffer, type Offer, type RoomPlan, type RunState } from './run';
 import { PATRON_POOL } from './rooms';
+import { BOSSES } from './enemies/bosses';
+import { MINIS_BY_BIOME } from './enemies/minibosses';
 
 export interface RoomHooks {
   offer(o: Offer, done: () => void): void;
@@ -264,8 +266,21 @@ export class RoomController implements RoomLogic {
   /* ─────────────── waves ─────────────── */
 
   private startPrimary(g: Game) {
-    if (this.plan.type === 'boss' && this.hooks.spawnBoss) this.boss = this.hooks.spawnBoss(g, this.plan);
-    if (this.plan.type === 'mini' && this.hooks.spawnMini) this.boss = this.hooks.spawnMini(g, this.plan);
+    const A = g.arena;
+    const cx = (A.x0 + A.x1) / 2;
+    const cy = A.y0 + (A.y1 - A.y0) * 0.3;
+    if (this.plan.type === 'boss') {
+      const def = BOSSES[Math.min(3, this.plan.biome)];
+      this.boss = g.spawnEnemy(def, cx, cy, { hpMul: TUNING.scaling.bossHp });
+    } else if (this.plan.type === 'mini') {
+      const pair = MINIS_BY_BIOME[Math.min(3, this.plan.biome)];
+      const def = pair[this.plan.seed % 2];
+      this.run.lastMini = def.id;
+      if (def.id === 'mini_riveter') {
+        g.spawnEnemy(def, cx - 220, cy, {});
+        this.boss = g.spawnEnemy(def, cx + 220, cy, {});
+      } else this.boss = g.spawnEnemy(def, cx, cy, {});
+    }
   }
 
   private nextWave(g: Game) {

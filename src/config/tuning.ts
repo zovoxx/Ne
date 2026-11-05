@@ -303,11 +303,16 @@ export const TUNING = {
     /** enemy HP multiplier per biome (index 0 = biome 1) */
     hpByBiome: [1, 1.55, 2.25, 3.1],
     /** enemy damage multiplier per biome */
-    dmgByBiome: [1, 1.25, 1.5, 1.8],
+    dmgByBiome: [1, 1.2, 1.4, 1.65],
     /** extra HP per room depth inside a biome */
     hpPerStep: 0.05,
     eliteHp: 1.9,
     eliteDmg: 1.2,
+    /** global damage factors for boss and guardian attacks */
+    bossDmg: 0.72,
+    miniDmg: 0.85,
+    /** boss HP multiplier on top of the biome multiplier */
+    bossHp: 1,
   },
 
   // ───────────────────────────── WEAPONS ─────────────────────────────

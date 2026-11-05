@@ -3,6 +3,8 @@ import { BIOME1, SUMMONS1 } from './biome1';
 import { BIOME2 } from './biome2';
 import { BIOME3, SUMMONS3 } from './biome3';
 import { BIOME4, SUMMONS4 } from './biome4';
+import { BOSSES } from './bosses';
+import { MINIBOSSES } from './minibosses';
 
 /** Every regular enemy (used for encounters). */
 export const ENEMY_LIST: EnemyDef[] = [...BIOME1, ...BIOME2, ...BIOME3, ...BIOME4];
@@ -13,6 +15,7 @@ export function registerEnemies(list: EnemyDef[]) {
 }
 registerEnemies(ENEMY_LIST);
 registerEnemies([...SUMMONS1, ...SUMMONS3, ...SUMMONS4]);
+registerEnemies([...BOSSES, ...MINIBOSSES]);
 
 export function enemyDef(id: string): EnemyDef {
   const d = ENEMIES[id];

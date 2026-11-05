@@ -151,6 +151,19 @@ export function updateProjectiles(g: Game, dt: number) {
       p.active = false;
       continue;
     }
+    if (p.st === 8) {
+      // frozen in time, then released
+      p.a -= dt;
+      if (p.a <= 0) {
+        p.st = 0;
+        p.speed = 290;
+        p.vx = Math.cos(p.c) * p.speed;
+        p.vy = Math.sin(p.c) * p.speed;
+      } else {
+        p.vx = p.vy = 0;
+        continue;
+      }
+    }
     // homing (enemy pages / player seekers)
     if (p.homing > 0) {
       let tx = pl.x;

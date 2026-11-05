@@ -21,6 +21,9 @@ import type { PatronId } from './game/boons/types';
 import type { WeaponId } from './game/weapons/types';
 import { BotBrain } from './game/bot';
 import { ENCOUNTER_CTX } from './game/encounters';
+import { applyMeta, buy as buyUnlock, canBuy, has, KEEPSAKE_IDS, UNLOCKS, weaponUnlocked } from './game/meta';
+import { lastStoryLine, nextStoryLine } from './game/story';
+import type { Enemy } from './game/entities';
 
 export class App {
   renderer = new Renderer();
@@ -92,6 +95,11 @@ export class App {
       if (ev.type === EV.StreakTier) this.hud.toast(ev.key, '#' + ev.color.toString(16).padStart(6, '0'));
       if (ev.type === EV.Text) this.hud.toast(ev.key, '#ffffff', 0.7);
       if (ev.type === EV.DeathDefy) this.hud.toast('DEATH DEFIED', '#ffd27a', 1.4);
+      if (ev.type === EV.BossPhase) {
+        const e = ev.ref as Enemy | null;
+        if (e && ev.n === 0) this.hud.toast(e.def.name.toUpperCase(), '#ffd0dc', 2.2);
+        else if (e && ev.n > 0) this.hud.toast(ev.n >= 2 ? 'DESPERATE' : 'ENRAGED', '#ff8aa8', 1.2);
+      }
     });
     g.hooks.onPlayerDeath = () => this.onDeath();
     // novelty memory: encounters favour enemy pairings you haven't fought together yet
@@ -151,8 +159,9 @@ export class App {
       cont: saved ? () => this.startRun(true) : undefined,
       contInfo: saved ? `${BIOME_NAMES[saved.biome]} · room ${saved.rooms}` : undefined,
       play: () => this.startRun(false),
-      wick: () => this.hud.toast('The Wick opens after your first run', '#ffd27a'),
+      wick: () => this.showWick(() => this.showTitle()),
       settings: () => this.showSettings(() => this.showTitle()),
+      line: lastStoryLine(this.meta) ?? undefined,
     });
   }
 
@@ -230,8 +239,10 @@ export class App {
     this.paused = false;
     this.deathT = -1;
     let run: RunState | null = resume ? loadRun() : null;
+    const opts = applyMeta(this.meta);
+    if (!weaponUnlocked(this.meta, this.weapon)) this.setWeapon('fangs');
     if (!run) {
-      run = newRun((Math.random() * 1e9) | 0, this.weapon, { maxHpBonus: 0, deathDefiance: 1, rerolls: 1, gold: 0, keepsake: this.meta.keepsake });
+      run = newRun((Math.random() * 1e9) | 0, this.weapon, opts);
       this.meta.runs++;
       saveMeta(this.meta);
     }
@@ -299,7 +310,15 @@ export class App {
         this.hud.setRoomLabel(`${BIOME_NAMES[plan.biome]} · ${plan.step + 1}/6`);
         this.saveProgress();
       },
-      cleared: () => {
+      cleared: (plan) => {
+        if (plan.type === 'boss') {
+          const first = (this.meta.bossKills[plan.biome] ?? 0) === 0;
+          this.meta.bossKills[plan.biome] = (this.meta.bossKills[plan.biome] ?? 0) + 1;
+          if (first && this.run) {
+            this.run.embers += 15;
+            this.hud.toast('FIRST VICTORY · +15 EMBERS', '#ffd27a', 1.6);
+          }
+        }
         if (this.run) {
           this.run.kills = g.kills;
           this.run.bestStreak = Math.max(this.run.bestStreak, g.bestStreak);
@@ -388,7 +407,7 @@ export class App {
     g.mode = won ? 'victory' : 'dead';
     run.kills = g.kills;
     run.bestStreak = Math.max(run.bestStreak, g.bestStreak);
-    const embers = this.computeEmbers(run, won);
+    const embers = Math.round(this.computeEmbers(run, won) * applyMeta(this.meta).emberMul) + run.embers;
     this.meta.embers += embers;
     this.meta.totalEmbers += embers;
     if (won) this.meta.wins++;
@@ -400,19 +419,72 @@ export class App {
     this.hud.show(false);
     const m = Math.floor(run.time / 60);
     const s = Math.floor(run.time % 60);
-    this.screens.showDeath({
+    const summary = {
       won,
       where: won ? 'All four depths' : `${BIOME_NAMES[run.biome]} · room ${run.rooms}`,
       time: `${m}:${String(s).padStart(2, '0')}`,
       kills: run.kills,
       streak: run.bestStreak,
       embers,
-      story: null,
-      weapons: WEAPON_ORDER.map((id) => ({ id, name: weaponById(id).name, locked: false })),
+      story: nextStoryLine(this.meta, { won, biome: run.biome, bossKilled: this.meta.bossKills, weapon: run.weapon, boons: run.boons.length }),
+      weapons: WEAPON_ORDER.map((id) => ({ id, name: weaponById(id).name, locked: !weaponUnlocked(this.meta, id) })),
       weapon: this.weapon,
       again: () => this.startRun(false),
-      wick: () => this.hud.toast('Coming soon', '#ffd27a'),
-      setWeapon: (id) => this.setWeapon(id as WeaponId),
+      wick: () => this.showWick(() => this.endRunScreenAgain()),
+      setWeapon: (id: string) => this.setWeapon(id as WeaponId),
+    };
+    this.lastSummary = () => {
+      summary.weapons = WEAPON_ORDER.map((id) => ({ id, name: weaponById(id).name, locked: !weaponUnlocked(this.meta, id) }));
+      summary.weapon = this.weapon;
+      summary.embers = embers;
+      this.screens.showDeath(summary);
+    };
+    this.screens.showDeath(summary);
+  }
+
+  /** re-show the run summary after visiting the Wick */
+  private lastSummary: (() => void) | null = null;
+  private endRunScreenAgain() {
+    if (this.lastSummary) this.lastSummary();
+    else this.showTitle();
+  }
+
+  showWick(back: () => void) {
+    const m = this.meta;
+    const groups = ['Weapons', 'Lights', 'The Wick', 'Keepsakes', 'Deepening'].map((name) => ({
+      name,
+      items: UNLOCKS.filter((u) => u.group === name).map((u) => ({
+        id: u.id,
+        name: u.name,
+        desc: u.desc,
+        cost: u.cost,
+        owned: has(m, u.id),
+        can: canBuy(m, u),
+        locked: !(u.requires ?? []).every((r) => has(m, r)),
+        equippable: !!KEEPSAKE_IDS[u.id],
+        equipped: m.keepsake === u.id,
+      })),
+    }));
+    const mins = Math.floor(m.bestTime / 60);
+    const secs = Math.floor(m.bestTime % 60);
+    this.screens.showWick({
+      embers: m.embers,
+      groups,
+      stats: `Runs ${m.runs} · Victories ${m.wins} · Bosses felled ${m.bossKills.reduce((a, b) => a + b, 0)}${m.bestTime ? ` · Best ${mins}:${String(secs).padStart(2, '0')}` : ''}`,
+      buy: (id) => {
+        if (buyUnlock(m, id)) {
+          if (id.startsWith('k_') && !m.keepsake) m.keepsake = id;
+          saveMeta(m);
+          this.sfx.reward();
+        }
+        this.showWick(back);
+      },
+      equip: (id) => {
+        m.keepsake = m.keepsake === id ? null : id;
+        saveMeta(m);
+        this.showWick(back);
+      },
+      back,
     });
   }
 

@@ -291,6 +291,60 @@ export class Screens {
     });
   }
 
+  /* ───────── the wick (meta progression) ───────── */
+
+  showWick(
+    w: {
+      embers: number;
+      groups: { name: string; items: { id: string; name: string; desc: string; cost: number; owned: boolean; can: boolean; locked: boolean; equippable?: boolean; equipped?: boolean }[] }[];
+      buy: (id: string) => void;
+      equip: (id: string) => void;
+      back: () => void;
+      stats: string;
+    },
+  ) {
+    const el = this.mount(
+      `<div class="panel wick">
+        <div class="wick-head"><h2>The Wick</h2><div class="embers">${w.embers} embers</div></div>
+        <div class="wick-stats">${w.stats}</div>
+        <div class="wick-body">${w.groups
+          .map(
+            (gr) => `<div class="wick-group"><h3>${gr.name}</h3><div class="wick-grid">${gr.items
+              .map(
+                (it) => `<div class="wick-item ${it.owned ? 'owned' : ''} ${it.locked ? 'locked' : ''}">
+                  <div class="wi-name">${it.name}</div>
+                  <div class="wi-desc">${it.desc}</div>
+                  ${
+                    it.owned
+                      ? it.equippable
+                        ? `<button class="btn-ui small ${it.equipped ? 'primary' : ''}" data-equip="${it.id}">${it.equipped ? 'Equipped' : 'Equip'}</button>`
+                        : `<div class="wi-own">Kindled</div>`
+                      : `<button class="btn-ui small" data-buy="${it.id}" ${it.can ? '' : 'disabled'}>${it.locked ? 'Requires previous' : it.cost + ' embers'}</button>`
+                  }
+                </div>`,
+              )
+              .join('')}</div></div>`,
+          )
+          .join('')}</div>
+        <div class="row-btns"><button class="btn-ui primary" data-back>Back</button></div>
+      </div>`,
+    );
+    el.querySelectorAll<HTMLElement>('[data-buy]').forEach((b) =>
+      b.addEventListener('click', () => {
+        this.onConfirm?.();
+        w.buy(b.dataset.buy!);
+      }),
+    );
+    el.querySelectorAll<HTMLElement>('[data-equip]').forEach((b) =>
+      b.addEventListener('click', () => {
+        this.onClick?.();
+        w.equip(b.dataset.equip!);
+      }),
+    );
+    el.querySelector('[data-back]')!.addEventListener('click', w.back);
+    this.keys({ Escape: w.back });
+  }
+
   /** generic panel (codex, wick…) */
   showPanel(html: string, bind: (el: HTMLElement) => void) {
     const el = this.mount(html);

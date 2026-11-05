@@ -137,7 +137,7 @@ export class Hud {
     }
     // boss bar
     let boss = null;
-    for (const e of g.enemies.live) if (e.active && e.isBoss) boss = e;
+    for (const e of g.enemies.live) if (e.active && (e.isBoss || e.isMini) && (!boss || e.isBoss)) boss = e;
     this.set('bossOn', boss ? 1 : 0, () => this.boss.classList.toggle('on', !!boss));
     if (boss) {
       this.set('bossName', boss.def.name, () => (this.bossName.textContent = boss!.def.name.toUpperCase()));

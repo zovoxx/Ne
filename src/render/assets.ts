@@ -19,6 +19,7 @@ import * as IC from './art/icons';
 import * as E2 from './art/enemies2';
 import * as E3 from './art/enemies3';
 import * as E4 from './art/enemies4';
+import * as BO from './art/bosses';
 
 export interface AssetSpec {
   /** size in world units */
@@ -148,6 +149,22 @@ const A: Record<string, AssetSpec> = {
   aegisherald: { w: 60, h: 50, ay: 0.55, draw: E4.drawAegisherald, sil: true },
   hexer: { w: 46, h: 54, ay: 0.58, draw: E4.drawHexer, sil: true },
   nullshard: { w: 36, h: 40, draw: E4.drawNullshard, sil: true },
+
+  // ─── bosses & guardians ───
+  boss_stag: { w: 150, h: 150, ay: 0.55, draw: BO.drawStag, sil: true },
+  boss_archivist: { w: 110, h: 110, ay: 0.55, draw: BO.drawArchivist, sil: true },
+  boss_engine: { w: 120, h: 130, ay: 0.55, draw: BO.drawEngine, sil: true },
+  boss_regent: { w: 100, h: 120, ay: 0.58, draw: BO.drawRegent, sil: true },
+  mini_thornback: { w: 120, h: 96, ay: 0.58, draw: BO.drawThornback, sil: true },
+  mini_bloom: { w: 96, h: 90, ay: 0.55, draw: BO.drawBloomMother, sil: true },
+  mini_librarian: { w: 72, h: 80, ay: 0.55, draw: BO.drawLibrarian, sil: true },
+  mini_deepmaw: { w: 90, h: 90, draw: BO.drawDeepmaw, sil: true },
+  mini_foreman: { w: 104, h: 90, ay: 0.58, draw: BO.drawForeman, sil: true },
+  mini_riveter: { w: 72, h: 66, ay: 0.55, draw: BO.drawRiveter, sil: true },
+  mini_eclipse: { w: 104, h: 100, ay: 0.6, draw: BO.drawEclipseKnight, sil: true },
+  mini_matron: { w: 90, h: 90, ay: 0.55, draw: BO.drawVoidMatron, sil: true },
+  page: { w: 18, h: 22, draw: BO.drawPage },
+  regentWave: { w: 44, h: 72, draw: BO.drawRegentWave },
 
   // enemy projectiles / props
   seed: { w: 18, h: 18, draw: E2.drawSeed },

@@ -147,6 +147,7 @@ export class BotBrain {
       }
     }
 
+    const aggressive = !!rc && rc.roomT > 60;
     // pick a target
     let target: Enemy | null = null;
     let td = Infinity;
@@ -164,7 +165,6 @@ export class BotBrain {
     }
 
     // long fights: stop being careful and commit
-    const aggressive = !!rc && rc.roomT > 60;
     const ranged = p.weapon.ranged && !aggressive;
     let mx = 0;
     let my = 0;
@@ -247,7 +247,7 @@ export class BotBrain {
         this.dashCd = 0.6;
       }
     }
-    if (danger > 0) {
+    if (danger > (aggressive ? 0.8 : 0)) {
       const l = Math.hypot(dodgeX, dodgeY) || 1;
       mx = dodgeX / l;
       my = dodgeY / l;

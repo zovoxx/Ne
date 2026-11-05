@@ -55,7 +55,7 @@ const PLACE: Record<Role, SpawnGroup['place']> = {
 };
 
 /** set by the boss module so boss rooms don't add regular waves */
-export const BOSS_HOOK = { hasBoss: (biome: number) => biome < 0 };
+export const BOSS_HOOK = { hasBoss: (biome: number) => biome >= 0 };
 
 /** context provided by the app (meta progression): unlock tier and seen pairings */
 export const ENCOUNTER_CTX = {
@@ -100,7 +100,7 @@ export function planEncounter(g: Game, run: RunState, plan: RoomPlan): Wave[] {
   const step = plan.step;
   const waves: Wave[] = [];
   let nWaves = 3;
-  let budget = 6.6 + step * 0.9 + biome * 1.6;
+  let budget = 7.4 + step * 0.9 + biome * 1.5;
   let eliteCount = 0;
   if (plan.type === 'elite') {
     budget *= 1.1;

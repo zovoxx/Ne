@@ -48,6 +48,7 @@ export interface RunState {
   /** "glass pact" etc. */
   curse: Record<string, number>;
   won: boolean;
+  lastMini?: string;
 }
 
 export function newRun(seed: number, weapon: WeaponId, opts: { maxHpBonus: number; deathDefiance: number; rerolls: number; gold: number; keepsake: string | null }): RunState {
@@ -78,6 +79,9 @@ export function newRun(seed: number, weapon: WeaponId, opts: { maxHpBonus: numbe
     won: false,
   };
 }
+
+/** rules toggled by meta progression */
+export const BOON_RULES = { duos: true };
 
 /** meta-progression hook: lets save.ts add permanent bonuses into the stat rebuild */
 export const META_HOOK: { apply: ((s: Stats) => void) | null } = { apply: null };
@@ -166,6 +170,7 @@ export function eligibleBoons(run: RunState, patron: PatronId): BoonDef[] {
   for (const def of BOONS) {
     if (ctx.owned.has(def.id)) continue;
     if (def.duo) {
+      if (!BOON_RULES.duos) continue;
       if (!def.duo.includes(patron)) continue;
       if (!hasCoreBoon(run, def.duo[0]) || !hasCoreBoon(run, def.duo[1])) continue;
       if (def.req && !def.req(ctx)) continue;

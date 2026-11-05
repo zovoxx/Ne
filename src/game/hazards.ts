@@ -157,6 +157,8 @@ export function updateHazards(g: Game, dt: number) {
       }
       case HZ.Void: {
         // arena-shrinking void: everything outside radius r from (x,y) hurts
+        if (h.c > 0 && h.r > h.c) h.r -= 28 * dt;
+        if (h.owner && !h.owner.active) h.active = false;
         const d = Math.hypot(p.x - h.x, p.y - h.y);
         if (d > h.r) {
           g.hurtPlayer(h.dmg, h.x, h.y, h.owner);
@@ -235,6 +237,14 @@ export function updateHazards(g: Game, dt: number) {
           const info = dotInfo(0x9cff5a);
           damageEnemy(g, e, h.dmg, info);
         });
+        break;
+      case HZ.Blast:
+        // delayed explosion; the matching telegraph circle is drawn separately
+        h.a -= dt;
+        if (h.a <= 0) {
+          h.active = false;
+          explode(g, h.x, h.y, h.r, h.dmg, h.team === TEAM_ENEMY ? 1 : 0, 0.5, 'other', h.owner);
+        }
         break;
       case HZ.Rain:
         // starfall: a burst of hits on everything inside, h.a hits remaining

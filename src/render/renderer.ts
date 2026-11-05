@@ -915,6 +915,17 @@ export class Renderer {
         v.c.tint = h.color;
         v.c.blendMode = 'add';
         break;
+      case HZ.Blast:
+        v.a.visible = v.b.visible = v.c.visible = false;
+        break;
+      case HZ.Void:
+        v.a.texture = A.get('ring');
+        v.a.tint = 0xd45cff;
+        v.a.blendMode = 'add';
+        v.b.texture = A.get('ring');
+        v.b.tint = 0x2a0a4a;
+        v.c.visible = false;
+        break;
       case HZ.Mine:
         v.a.texture = A.get('mine');
         v.b.texture = A.get('glow');
@@ -1014,6 +1025,13 @@ export class Renderer {
         v.c.alpha = 0.6 * fadeOut;
         break;
       }
+      case HZ.Void:
+        v.a.scale.set((h.r * 2) / 128);
+        v.a.alpha = 0.8 + Math.sin(this.time * 6) * 0.15;
+        v.b.scale.set((h.r * 2.1) / 128);
+        v.b.alpha = 0.9;
+        v.a.rotation = this.time * 0.3;
+        break;
       case HZ.Mine: {
         const armed = h.armT <= 0;
         const blink = h.st === 1 ? Math.sin(this.time * 40) > 0 : Math.sin(this.time * 6 + h.id) > 0.6;
@@ -1740,6 +1758,43 @@ export class Renderer {
         f.s0 = 0.4;
         f.s1 = 0.7;
         f.s.tint = ev.color;
+        break;
+      }
+      case EV.BossKill: {
+        this.whiteT = 0.4;
+        this.shake.add(0.9);
+        for (let k = 0; k < 5; k++) {
+          const ring = this.particles.spawn(A.get('ring'), ev.x, ev.y, true);
+          ring.max = 0.5 + k * 0.15;
+          ring.s0 = 0.5;
+          ring.s1 = 3 + k * 1.4;
+          ring.s.tint = k % 2 ? 0xffffff : 0xffd27a;
+        }
+        for (let i = 0; i < 90 * this.quality; i++) {
+          const a = vrand() * TAU;
+          const p = this.particles.spawn(A.get(i % 2 ? 'shard' : 'spark'), ev.x, ev.y, i % 2 === 0);
+          const sp = vrange(300, 1300);
+          p.vx = Math.cos(a) * sp;
+          p.vy = Math.sin(a) * sp;
+          p.vr = vrange(-15, 15);
+          p.stretch = i % 2 ? 0 : 0.003;
+          p.drag = 2.5;
+          p.max = vrange(0.7, 1.4);
+          p.s0 = vrange(1, 2.2);
+          p.s1 = 0.1;
+          p.s.tint = i % 3 === 0 ? 0xffffff : i % 3 === 1 ? 0xffd27a : 0xff8a3d;
+        }
+        break;
+      }
+      case EV.BossPhase: {
+        const e = ev.ref as Enemy | null;
+        this.shake.add(0.45);
+        const ring = this.particles.spawn(A.get('ring'), ev.x, ev.y, true);
+        ring.max = 0.6;
+        ring.s0 = 0.4;
+        ring.s1 = 4.5;
+        ring.s.tint = e ? e.def.blood : 0xffffff;
+        this.whiteT = Math.max(this.whiteT, 0.15);
         break;
       }
       case EV.StreakTier: {
