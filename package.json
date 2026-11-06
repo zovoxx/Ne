@@ -13,7 +13,8 @@
     "playtest": "node scripts/playtest.cjs",
     "icons": "node scripts/gen-icons.cjs",
     "deploy": "npm run build && npx wrangler deploy",
-    "deploy:pages": "npm run build && npx wrangler pages deploy dist --project-name lanternfall"
+    "deploy:pages": "npm run build && npx wrangler pages deploy dist --project-name lanternfall",
+    "package": "npm run build && node scripts/package.cjs"
   },
   "engines": {
     "node": ">=20.19"

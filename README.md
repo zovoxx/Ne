@@ -47,9 +47,19 @@ The repo is ready for both Cloudflare Workers (static assets, `*.workers.dev`) a
 2. Framework preset: *Vite* (or none) · Build command: `npm run build` · Output directory: `dist`.
 3. Node version: the repo has `.node-version` (22). The site appears at `https://<project>.pages.dev`.
 
-**C. Upload by hand**
-- Run `npm run build`, then in *Workers & Pages* → *Create* → *Pages* → *Upload assets*, drag the
-  `dist` folder in. Or from a terminal: `npm run deploy:pages` (Pages) / `npm run deploy` (Workers).
+**C. Upload by hand (drag and drop, no build needed)**
+
+Cloudflare's drag-and-drop uploader only accepts finished static files. Don't upload the whole
+repository (it contains `package.json` and `wrangler.jsonc`, which makes the uploader reject it
+with *"does not yet support projects that require a build process"*). Upload one of these instead:
+
+- **`lanternfall-site.zip`** (in the repo root) — on GitHub open the file and tap *Download raw
+  file*, then in Cloudflare: *Workers & Pages* → *Create* → *Upload your static files* (or *Pages* →
+  *Upload assets*) and pick the zip.
+- **the `site/` folder** — the same files unzipped, if you prefer to drag a folder.
+
+Both are pre-built and committed. After changing the code, regenerate them with `npm run package`.
+From a terminal you can also deploy with `npm run deploy` (Workers) or `npm run deploy:pages` (Pages).
 
 ## Play it on your phone
 
