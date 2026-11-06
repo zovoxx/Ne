@@ -65,6 +65,16 @@ export class Platform {
     }
   }
 
+  /** desktop: F key / button toggles fullscreen */
+  async toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+    } catch {
+      /* not allowed */
+    }
+  }
+
   private wantWake = false;
   async requestWakeLock() {
     this.wantWake = true;

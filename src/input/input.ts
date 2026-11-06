@@ -39,6 +39,13 @@ export class InputManager {
   stickKnob: HTMLElement;
   onAnyInput: (() => void) | null = null;
   onPause: (() => void) | null = null;
+  onFullscreen: (() => void) | null = null;
+  /** world position of the player (gamepad right-stick aim) */
+  playerPos: (() => { x: number; y: number }) | null = null;
+  private padPrev: boolean[] = [];
+  private padAim = { x: 0, y: 0, t: -99 };
+  private padNavT = 0;
+  usingPad = false;
 
   constructor(private layer: HTMLElement, private controls: HTMLElement, private frame: InputFrame) {
     this.stickBase = controls.querySelector('.stick-base') as HTMLElement;
@@ -134,6 +141,10 @@ export class InputManager {
 
   private move(e: PointerEvent) {
     if (e.pointerType === 'mouse') {
+      if (e.movementX || e.movementY) {
+        this.setTouch(false);
+        this.usingPad = false;
+      }
       this.mouse.x = e.clientX;
       this.mouse.y = e.clientY;
       this.mouse.last = performance.now();
@@ -187,6 +198,10 @@ export class InputManager {
     }
     if (down && (e.code === 'Escape' || e.code === 'KeyP')) {
       this.onPause?.();
+      return;
+    }
+    if (down && e.code === 'KeyF') {
+      this.onFullscreen?.();
       return;
     }
     if (down) {
@@ -247,8 +262,15 @@ export class InputManager {
       for (const code in KEYMAP) if (KEYMAP[code] === b.id && this.keys.has(code)) held = true;
       f.held[b.id] = held && this.enabled;
     }
-    // mouse aim only when the mouse was used recently and we're not on touch
-    if (!this.usingTouch && this.mouse.valid && performance.now() - this.mouse.last < 2500) {
+    this.pollPad(f);
+    // gamepad right stick aims
+    if (this.usingPad && performance.now() - this.padAim.t < 400 && this.playerPos) {
+      const pp = this.playerPos();
+      f.aimActive = true;
+      f.aimX = pp.x + this.padAim.x * 200;
+      f.aimY = pp.y + this.padAim.y * 200;
+    } else if (!this.usingTouch && !this.usingPad && this.mouse.valid && (performance.now() - this.mouse.last < 6000 || this.mouseHeld.attack || this.mouseHeld.special)) {
+      // mouse aim while the mouse is in use
       const w = screenToWorld(this.mouse.x, this.mouse.y);
       f.aimActive = true;
       f.aimX = w.x;
@@ -258,5 +280,74 @@ export class InputManager {
       f.mx = f.my = 0;
       f.clearPressed();
     }
+  }
+
+  /** Standard-mapping gamepad: left stick / d-pad move, right stick aims, A attack, X special,
+   *  B / RB dash, Y / LT sigil, RT attack, Start pause. In menus the stick/d-pad moves focus and A clicks. */
+  private pollPad(f: InputFrame) {
+    const pads = typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : [];
+    let pad: Gamepad | null = null;
+    for (const p of pads) if (p && p.connected) {
+      pad = p;
+      break;
+    }
+    if (!pad) return;
+    const b = (i: number) => !!pad!.buttons[i] && (pad!.buttons[i].pressed || pad!.buttons[i].value > 0.5);
+    const edge = (i: number) => b(i) && !this.padPrev[i];
+    const dz = (v: number) => (Math.abs(v) < 0.18 ? 0 : v);
+    let lx = dz(pad.axes[0] ?? 0);
+    let ly = dz(pad.axes[1] ?? 0);
+    if (b(14)) lx = -1;
+    if (b(15)) lx = 1;
+    if (b(12)) ly = -1;
+    if (b(13)) ly = 1;
+    const rx = dz(pad.axes[2] ?? 0);
+    const ry = dz(pad.axes[3] ?? 0);
+    let any = Math.abs(lx) + Math.abs(ly) + Math.abs(rx) + Math.abs(ry) > 0;
+    for (let i = 0; i < 16; i++) if (b(i)) any = true;
+    if (any && !this.usingPad) {
+      this.usingPad = true;
+      this.setTouch(false);
+    }
+    const overlay = document.querySelector('.overlay');
+    if (overlay) {
+      // menu navigation
+      this.padNavT -= 1 / 60;
+      const dir = Math.abs(lx) > 0.5 || Math.abs(ly) > 0.5 ? (lx + ly > 0 ? 1 : -1) : 0;
+      const focusables = Array.from(overlay.querySelectorAll<HTMLElement>('button:not([disabled]), input, select'));
+      if (dir && this.padNavT <= 0 && focusables.length) {
+        this.padNavT = 0.22;
+        const i = focusables.indexOf(document.activeElement as HTMLElement);
+        focusables[(i + dir + focusables.length) % focusables.length].focus();
+      }
+      if (!dir) this.padNavT = 0;
+      if (edge(0)) {
+        const el = document.activeElement as HTMLElement | null;
+        if (el && overlay.contains(el)) el.click();
+        else focusables[0]?.focus();
+      }
+      if (edge(9) || edge(1)) this.onPause?.();
+    } else if (this.enabled) {
+      if (Math.abs(lx) + Math.abs(ly) > 0) {
+        f.mx = lx;
+        f.my = ly;
+      }
+      if (Math.hypot(rx, ry) > 0.35) {
+        const m = Math.hypot(rx, ry);
+        this.padAim.x = rx / m;
+        this.padAim.y = ry / m;
+        this.padAim.t = performance.now();
+      }
+      const map: [number, Button][] = [[0, 'attack'], [7, 'attack'], [2, 'special'], [4, 'special'], [1, 'dash'], [5, 'dash'], [3, 'cast'], [6, 'cast']];
+      for (const [i, act] of map) {
+        if (b(i)) f.held[act] = true;
+        if (edge(i)) {
+          f.pressed[act] = true;
+          this.onAnyInput?.();
+        }
+      }
+      if (edge(9)) this.onPause?.();
+    }
+    for (let i = 0; i < pad.buttons.length; i++) this.padPrev[i] = b(i);
   }
 }

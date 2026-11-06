@@ -1157,3 +1157,27 @@ body.in-menu #controls {
   opacity: 0;
   transition: opacity 0.15s;
 }
+
+/* ───────── computer play ───────── */
+body.touch .pc-only {
+  display: none;
+}
+.pc-legend {
+  font-size: 12px;
+  color: var(--dim);
+  line-height: 1.6;
+  text-align: center;
+  margin-top: 4px;
+}
+.pc-legend b {
+  color: var(--txt);
+}
+body:not(.touch) #touch-layer {
+  cursor: crosshair;
+}
+.btn-ui:focus-visible,
+.card:focus-visible,
+.wchip:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}

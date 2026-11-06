@@ -81,6 +81,14 @@ From a terminal you can also deploy with `npm run deploy` (Workers) or `npm run 
 | Left button: Dash (invulnerable) | Space, Shift, L |
 | Small button: Sigil (cast) | E, Q, middle click |
 | Pause button (top right) | Esc / P |
+| | F: toggle fullscreen |
+
+**Controllers** (any standard gamepad in Chrome/Edge/Firefox/Safari): left stick or d-pad moves,
+right stick aims, A / RT attack, X / LB special, B / RB dash, Y / LT sigil, Start pauses. In menus
+the stick or d-pad moves between buttons and A selects.
+
+On a computer the game stays in its window (press F for fullscreen), aims at the mouse cursor and
+shows the key list on the title and pause screens.
 
 Right-side touches snap to the **nearest** button, so you never have to look. Inputs are buffered
 for 150 ms, a dash cancels attack recovery, and auto-aim picks the most sensible target in your

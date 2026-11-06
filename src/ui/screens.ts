@@ -21,6 +21,12 @@ const SLOT_ICON: Record<string, string> = {
   gold: `<svg viewBox="0 0 32 32" width="56%" height="56%"><circle cx="16" cy="16" r="11" fill="currentColor"/><circle cx="16" cy="16" r="6" fill="none" stroke="#000" stroke-opacity="0.35" stroke-width="2.5"/></svg>`,
 };
 
+const PC_LEGEND = `<div class="pc-legend pc-only">
+  <div><b>WASD</b> / arrows move · <b>mouse</b> aims</div>
+  <div><b>Left click</b> / J attack · <b>Right click</b> / K special · <b>Space</b> / Shift dash · <b>E</b> / Q sigil</div>
+  <div><b>Esc</b> pause · <b>F</b> fullscreen · <b>1 2 3</b> pick upgrades · controller supported</div>
+</div>`;
+
 export class Screens {
   private el: HTMLElement | null = null;
   onClick: (() => void) | null = null;
@@ -167,6 +173,7 @@ export class Screens {
       `<div class="panel pause">
         <h2>Paused</h2>
         <div class="pause-info">${a.info}</div>
+        ${PC_LEGEND}
         <div class="col">
           <button class="btn-ui primary" data-a="resume">Resume</button>
           <button class="btn-ui" data-a="settings">Settings</button>
@@ -233,6 +240,7 @@ export class Screens {
             <button class="btn-ui" data-a="settings">Settings</button>
           </div>
           ${a.install ? `<button class="btn-ui small" data-a="install">Install as app</button>` : ''}
+          ${PC_LEGEND}
           ${a.iosHint ? `<div class="ios-hint">For true fullscreen on iPhone/iPad: tap <b>Share</b> → <b>Add to Home Screen</b>, then launch Lanternfall from your home screen.</div>` : ''}
         </div>
       </div>`,

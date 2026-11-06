@@ -108,10 +108,13 @@ export class App {
     // iOS Safari only unlocks audio on some gesture types, so listen to all of them
     for (const ev of ['pointerdown', 'touchend', 'click', 'keydown']) window.addEventListener(ev, unlock, { capture: true });
     // Android / desktop: first tap goes fullscreen + landscape (iOS needs the home-screen app)
-    window.addEventListener('pointerdown', () => void this.platform.enterFullscreen(), { capture: true, once: true });
+    // only phones/tablets: a computer keeps its window unless you press F
+    if (matchMedia('(pointer: coarse)').matches) window.addEventListener('pointerdown', () => void this.platform.enterFullscreen(), { capture: true, once: true });
     if (import.meta.env.DEV || new URLSearchParams(location.search).has('debug')) this.debug = new DebugMenu(this);
     this.hud.onPause = () => this.togglePause();
     this.input.onPause = () => this.togglePause();
+    this.input.onFullscreen = () => void this.platform.toggleFullscreen();
+    this.input.playerPos = () => this.game.player;
     this.presenter.listeners.push((game, ev) => {
       if (ev.type === EV.StreakTier) this.hud.toast(ev.key, '#' + ev.color.toString(16).padStart(6, '0'));
       if (ev.type === EV.Text) this.hud.toast(ev.key, '#ffffff', 0.7);
