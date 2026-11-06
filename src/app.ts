@@ -183,8 +183,8 @@ export class App {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const res = q >= 0.95 ? dpr : q >= 0.65 ? Math.min(dpr, 1.6) : Math.min(dpr, 1.25);
     if (Math.abs(r.app.renderer.resolution - res) > 0.01) {
-      r.app.renderer.resolution = res;
-      r.app.renderer.resize(window.innerWidth, window.innerHeight);
+      const R = r.app.renderer;
+      R.resize(R.screen.width, R.screen.height, res);
       r.resize();
     }
   }

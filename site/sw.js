@@ -1,7 +1,7 @@
 /* Lanternfall service worker. Generated at build time from src/platform/sw-template.js */
-const VERSION = 'a3eec6a5d8a3';
+const VERSION = 'f1b47981c0d5';
 const CACHE = 'lanternfall-' + VERSION;
-const PRECACHE = ["./","./assets/CanvasPool-DSFMGSx5.js","./assets/RenderTargetSystem-DgrPN-N5.js","./assets/browserAll-DF49pkY4.js","./assets/canvasUtils-BGusn-Eh.js","./assets/getTexelRangeRects-DRoSGPnx.js","./assets/getTextureBatchBindGroup-8nn_p1gP.js","./assets/index-CA4WmSIR.js","./assets/index-CqVUC5mX.css","./assets/init-DHcvDa8s.js","./assets/webworkerAll-v_TENbQd.js","./icons/apple-touch-icon.png","./icons/icon-192.png","./icons/icon-512.png","./icons/maskable-512.png","./index.html","./manifest.webmanifest"];
+const PRECACHE = ["./","./assets/CanvasPool-DSFMGSx5.js","./assets/RenderTargetSystem-DgrPN-N5.js","./assets/browserAll-zOzG6d9Y.js","./assets/canvasUtils-BGusn-Eh.js","./assets/getTexelRangeRects-DRoSGPnx.js","./assets/getTextureBatchBindGroup-8nn_p1gP.js","./assets/index-84or9fab.js","./assets/index-CqVUC5mX.css","./assets/init-D30FVSf6.js","./assets/webworkerAll-CP1Y2eNA.js","./icons/apple-touch-icon.png","./icons/icon-192.png","./icons/icon-512.png","./icons/maskable-512.png","./index.html","./manifest.webmanifest"];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

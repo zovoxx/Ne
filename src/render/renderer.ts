@@ -266,8 +266,9 @@ export class Renderer {
 
   resize() {
     const r = this.app.renderer;
-    this.screenW = r.width / r.resolution;
-    this.screenH = r.height / r.resolution;
+    // renderer.screen is the size in CSS pixels at any resolution / device pixel ratio
+    this.screenW = r.screen.width;
+    this.screenH = r.screen.height;
     const V = TUNING.view;
     this.baseScale = Math.min(this.screenH / V.height, this.screenW / V.minWidth);
     for (const s of [this.vignette, this.hurtFlash, this.streakEdge, this.lowHp]) {
